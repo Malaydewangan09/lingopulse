@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm info:*)",
+      "Bash(npm search:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:3000/api/debug | python3 -m json.tool)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
