@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Globe, BarChart3, GitPullRequest, Plus, Home, ChevronDown, Trash2, Check } from 'lucide-react';
+import { LayoutDashboard, Globe, BarChart3, GitPullRequest, Plus, Home, ChevronDown, Trash2 } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -36,7 +36,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
   const loadRepos = () => {
     fetch('/api/repos')
       .then(r => r.ok ? r.json().catch(() => []) : [])
-      .then((data: any[]) => setRepos(Array.isArray(data) ? data : []))
+      .then((data: Repo[]) => setRepos(Array.isArray(data) ? data : []))
       .catch(() => {});
   };
 
@@ -52,21 +52,21 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
 
   const handleDelete = async (e: React.MouseEvent, repoId: string) => {
     e.stopPropagation();
-    if (confirmId !== repoId) {
-      setConfirmId(repoId);
-      return;
-    }
     setDeletingId(repoId);
     try {
       const res = await fetch(`/api/repos/${repoId}`, { method: 'DELETE' });
-      if (!res.ok) { setConfirmId(null); return; }
+      if (!res.ok) {
+        setConfirmId(null);
+        return;
+      }
       const remaining = repos.filter(r => r.id !== repoId);
       setRepos(remaining);
       setConfirmId(null);
+      setShowRepos(false);
       if (remaining.length === 0) {
-        router.push('/connect');
+        router.replace('/connect');
       } else if (repoId === currentRepoId) {
-        router.push(`/repo/${remaining[0].id}`);
+        router.replace(`/repo/${remaining[0].id}`);
       }
     } finally {
       setDeletingId(null);
@@ -182,7 +182,13 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
         {/* Repo switcher */}
         <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
           <button
-            onClick={() => setShowRepos(v => !v)}
+            onClick={() => {
+              setShowRepos(v => {
+                const next = !v;
+                if (!next) setConfirmId(null);
+                return next;
+              });
+            }}
             onMouseEnter={() => setHoveredId('__repos')}
             onMouseLeave={() => setHoveredId(null)}
             style={{
@@ -215,7 +221,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
               {/* Invisible backdrop to close on outside click */}
               <div
                 style={{ position: 'fixed', inset: 0, zIndex: 199 }}
-                onClick={() => setShowRepos(false)}
+                onClick={() => { setShowRepos(false); setConfirmId(null); }}
               />
               <div
                 onClick={e => e.stopPropagation()}
@@ -261,23 +267,50 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
                         {r.full_name ?? r.name}
                         {isCurrent && <span style={{ marginLeft: 5, fontSize: 9, color: 'var(--accent)', opacity: 0.7 }}>●</span>}
                       </button>
-                      <button
-                        onClick={e => handleDelete(e, r.id)}
-                        disabled={isDeleting}
-                        title={isConfirm ? 'Click again to confirm' : 'Remove repo'}
-                        style={{
-                          flexShrink: 0, width: 24, height: 24, borderRadius: 5, border: 'none',
-                          background: isConfirm ? 'rgba(240,82,72,0.15)' : 'transparent',
-                          color: isConfirm ? 'var(--danger)' : 'var(--text-3)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', transition: 'background 0.12s, color 0.12s',
-                          opacity: isDeleting ? 0.4 : 1,
-                        }}
-                        onMouseEnter={e => { if (!isConfirm) { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(240,82,72,0.08)'; } }}
-                        onMouseLeave={e => { if (!isConfirm) { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.background = 'transparent'; } }}
-                      >
-                        {isConfirm ? <Check size={12} /> : <Trash2 size={12} />}
-                      </button>
+                      {isConfirm ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                          <button
+                            onClick={e => { e.stopPropagation(); setConfirmId(null); }}
+                            style={{
+                              height: 24, padding: '0 8px', borderRadius: 5, border: '1px solid var(--border)',
+                              background: 'transparent', color: 'var(--text-3)',
+                              fontSize: 10, fontFamily: 'DM Mono, monospace', cursor: 'pointer',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={e => handleDelete(e, r.id)}
+                            disabled={isDeleting}
+                            style={{
+                              height: 24, padding: '0 8px', borderRadius: 5, border: 'none',
+                              background: 'rgba(240,82,72,0.16)', color: 'var(--danger)',
+                              fontSize: 10, fontFamily: 'DM Mono, monospace', cursor: 'pointer',
+                              opacity: isDeleting ? 0.5 : 1,
+                            }}
+                          >
+                            {isDeleting ? '...' : 'Delete'}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={e => { e.stopPropagation(); setConfirmId(r.id); }}
+                          disabled={isDeleting}
+                          title="Remove repo"
+                          style={{
+                            flexShrink: 0, width: 24, height: 24, borderRadius: 5, border: 'none',
+                            background: 'transparent',
+                            color: 'var(--text-3)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', transition: 'background 0.12s, color 0.12s',
+                            opacity: isDeleting ? 0.4 : 1,
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(240,82,72,0.08)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                     </div>
                   );
                 })}

@@ -12,6 +12,7 @@ export interface LocaleStats {
   translatedKeys: number;
   lastUpdated: string;      // ISO date
   trend: number;            // delta from last check (+/-)
+  isSourceLocale?: boolean;
 }
 
 export interface FileLocaleCell {

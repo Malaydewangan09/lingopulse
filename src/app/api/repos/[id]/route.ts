@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readOwnerKey } from '@/lib/owner-session';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // DELETE /api/repos/[id]  —  disconnect & remove a repo
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const ownerKey = readOwnerKey(req);
+    if (!ownerKey) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
     const db = supabaseAdmin();
+    const { data: repo } = await db.from('repos').select('id').eq('id', id).eq('owner_key', ownerKey).single();
+    if (!repo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
     // Cascade deletes handled by Supabase FK or we delete manually
     await db.from('pr_checks').delete().eq('repo_id', id);
     await db.from('activity_events').delete().eq('repo_id', id);
@@ -19,31 +26,52 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { error } = await db.from('repos').delete().eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
 }
 
 // GET /api/repos/[id]  —  full dashboard data for one repo
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const ownerKey = readOwnerKey(req);
+  if (!ownerKey) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
   const db = supabaseAdmin();
 
   // Get repo
-  const { data: repo, error: repoErr } = await db.from('repos').select('*').eq('id', id).single();
+  const { data: repo, error: repoErr } = await db
+    .from('repos')
+    .select('*')
+    .eq('id', id)
+    .eq('owner_key', ownerKey)
+    .single();
   if (repoErr || !repo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Latest run
-  const { data: latestRun } = await db
+  // Latest + previous runs
+  const { data: recentRuns } = await db
     .from('analysis_runs')
     .select('*')
     .eq('repo_id', id)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+    .limit(2);
+
+  const latestRun = recentRuns?.[0] ?? null;
+  const previousRun = recentRuns?.[1] ?? null;
 
   if (!latestRun) {
-    return NextResponse.json({ repo, latestRun: null, locales: [], fileMetrics: [], activity: [], prChecks: [], history: [] });
+    return NextResponse.json({
+      repo,
+      latestRun: null,
+      previousRun: null,
+      locales: [],
+      previousLocales: [],
+      fileMetrics: [],
+      activity: [],
+      prChecks: [],
+      history: [],
+      historyLocales: [],
+    });
   }
 
   // Locale metrics for latest run
@@ -52,6 +80,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .select('*')
     .eq('run_id', latestRun.id)
     .order('coverage', { ascending: false });
+
+  // Locale metrics for previous run for trend deltas
+  const previousLocaleQuery = previousRun
+    ? await db
+        .from('locale_metrics')
+        .select('*')
+        .eq('run_id', previousRun.id)
+    : null;
+  const previousLocales = previousLocaleQuery?.data ?? [];
 
   // File metrics for latest run
   const { data: fileMetrics } = await db
@@ -78,10 +115,30 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // History (last 30 runs for charts)
   const { data: history } = await db
     .from('analysis_runs')
-    .select('overall_coverage, quality_score, missing_keys, created_at')
+    .select('id, overall_coverage, quality_score, missing_keys, created_at')
     .eq('repo_id', id)
     .order('created_at', { ascending: true })
     .limit(30);
 
-  return NextResponse.json({ repo, latestRun, locales, fileMetrics, activity, prChecks, history });
+  const historyRunIds = history?.map(run => run.id) ?? [];
+  const historyLocaleQuery = historyRunIds.length > 0
+    ? await db
+        .from('locale_metrics')
+        .select('run_id, locale, coverage, quality_score')
+        .in('run_id', historyRunIds)
+    : null;
+  const historyLocales = historyLocaleQuery?.data ?? [];
+
+  return NextResponse.json({
+    repo,
+    latestRun,
+    previousRun,
+    locales,
+    previousLocales,
+    fileMetrics,
+    activity,
+    prChecks,
+    history,
+    historyLocales,
+  });
 }

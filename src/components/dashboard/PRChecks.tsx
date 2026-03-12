@@ -1,6 +1,6 @@
 'use client';
 import type { PRCheck } from '@/lib/types';
-import { CheckCircle2, XCircle, AlertCircle, Clock, GitPullRequest, ArrowRight } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Clock, ArrowRight } from 'lucide-react';
 import SectionHeader from '@/components/dashboard/SectionHeader';
 
 interface Props { checks: PRCheck[]; }
@@ -49,59 +49,62 @@ export default function PRChecks({ checks }: Props) {
         }
       />
 
-      {/* PR list */}
       <div style={{ padding: '6px 0' }}>
-        {checks.map((check, i) => (
-          <div
-            key={check.id}
-            style={{
-              padding: '10px 16px',
-              borderBottom: i < checks.length - 1 ? '1px solid rgba(28,43,58,0.5)' : 'none',
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.015)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              {/* Status icon */}
-              <div style={{ paddingTop: 1 }}>
-                <StatusIcon status={check.status} />
-              </div>
-
-              {/* Content */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                  <span style={{
-                    fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace',
-                    background: 'var(--border)', padding: '1px 5px', borderRadius: 3,
-                  }}>
-                    #{check.prNumber}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {check.title}
-                  </span>
+        {checks.length === 0 ? (
+          <div style={{ padding: '24px 16px', color: 'var(--text-2)', fontSize: 12, textAlign: 'center' }}>
+            PR quality gates will show up here once webhook events start syncing pull requests.
+          </div>
+        ) : (
+          checks.map((check, i) => (
+            <div
+              key={check.id}
+              style={{
+                padding: '10px 16px',
+                borderBottom: i < checks.length - 1 ? '1px solid rgba(28,43,58,0.5)' : 'none',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.015)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ paddingTop: 1 }}>
+                  <StatusIcon status={check.status} />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <CoverageDelta before={check.coverageBefore} after={check.coverageAfter} />
-
-                  {check.missingKeys > 0 && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                     <span style={{
-                      fontSize: 10, fontFamily: 'DM Mono, monospace',
-                      color: check.status === 'failing' ? 'var(--danger)' : 'var(--warning)',
+                      fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace',
+                      background: 'var(--border)', padding: '1px 5px', borderRadius: 3,
                     }}>
-                      +{check.missingKeys} missing keys
+                      #{check.prNumber}
                     </span>
-                  )}
+                    <span style={{ fontSize: 12, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {check.title}
+                    </span>
+                  </div>
 
-                  <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginLeft: 'auto' }}>
-                    {check.timestamp}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <CoverageDelta before={check.coverageBefore} after={check.coverageAfter} />
+
+                    {check.missingKeys > 0 && (
+                      <span style={{
+                        fontSize: 10, fontFamily: 'DM Mono, monospace',
+                        color: check.status === 'failing' ? 'var(--danger)' : 'var(--warning)',
+                      }}>
+                        +{check.missingKeys} missing keys
+                      </span>
+                    )}
+
+                    <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginLeft: 'auto' }}>
+                      {check.timestamp}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

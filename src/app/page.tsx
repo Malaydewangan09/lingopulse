@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe, KeyRound, Activity, Layers, ArrowRight } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
@@ -16,13 +16,13 @@ import {
 
 export default function Home() {
   const router = useRouter();
-  const [checkingRepos, setCheckingRepos] = useState(true);
+  const checkingRepos = true;
 
   // If user has connected repos, redirect to the first one
   useEffect(() => {
     fetch('/api/repos')
       .then(r => r.ok ? r.json().catch(() => []) : [])
-      .then((repos: any[]) => {
+      .then((repos: { id: string }[]) => {
         if (repos?.length > 0) router.replace(`/repo/${repos[0].id}`);
         else router.replace('/connect');
       })
@@ -84,20 +84,20 @@ export default function Home() {
         </button>
       </div>
 
-      <main style={{ maxWidth: 1440, margin: '0 auto', padding: '24px 24px 48px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+      <main className="dashboard-main">
+        <div className="dashboard-metrics-grid">
           <MetricCard label="Overall Coverage" value={DEMO_REPO.overallCoverage.toFixed(1)} unit="%" trend={1.4} sublabel="across all locales" accent icon={<Globe size={15} />} delay={0} />
           <MetricCard label="Avg Quality Score" value={DEMO_REPO.qualityScore.toFixed(1)} unit="/10" trend={0.2} sublabel="GEMBA · BERTScore" icon={<Activity size={15} />} delay={80} />
           <MetricCard label="Missing Keys" value={DEMO_REPO.totalMissingKeys} trend={-18} trendLabel="-18 since last push" sublabel="across 12 locales" danger={DEMO_REPO.totalMissingKeys > 200} icon={<KeyRound size={15} />} delay={160} />
           <MetricCard label="Active Locales" value={`${DEMO_REPO.activeLocales}/${DEMO_REPO.totalLocales}`} sublabel="3 below threshold" icon={<Layers size={15} />} delay={240} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 14, marginBottom: 14 }}>
-          <div className="animate-fade-up" style={{ animationDelay: '0.1s' }}><CoverageHeatmap data={HEATMAP_DATA} /></div>
+        <div className="dashboard-top-grid">
+          <div className="animate-fade-up" style={{ animationDelay: '0.1s' }}><CoverageHeatmap data={HEATMAP_DATA} locales={LOCALE_STATS} /></div>
           <div className="animate-fade-up" style={{ animationDelay: '0.15s' }}><LocaleBreakdown locales={LOCALE_STATS} /></div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 340px', gap: 14 }}>
+        <div className="dashboard-bottom-grid">
           <div className="animate-fade-up" style={{ animationDelay: '0.2s' }}><QualityChart qualityData={QUALITY_HISTORY} coverageData={COVERAGE_HISTORY} /></div>
           <div className="animate-fade-up" style={{ animationDelay: '0.25s' }}><ActivityFeed events={ACTIVITY} /></div>
           <div className="animate-fade-up" style={{ animationDelay: '0.3s' }}><PRChecks checks={PR_CHECKS} /></div>

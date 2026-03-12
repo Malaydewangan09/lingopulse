@@ -3,25 +3,45 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getRepoInfo, registerWebhook } from '@/lib/github';
 import { fetchI18nFiles } from '@/lib/github';
 import { analyzeRepo, getLocaleMetadata } from '@/lib/analyze';
+import { attachOwnerKey, createOwnerKey, readOwnerKey } from '@/lib/owner-session';
 import crypto from 'crypto';
 
+interface ConnectRepoRequest {
+  repoUrl?: string;
+  githubToken?: string;
+  lingoApiKey?: string | null;
+}
+
+interface GithubRepoInfo {
+  default_branch?: string;
+}
+
 // GET /api/repos  —  list all connected repos
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const ownerKey = readOwnerKey(req);
+    if (!ownerKey) return NextResponse.json([]);
+
     const db = supabaseAdmin();
-    const { data, error } = await db.from('repos').select('*').order('created_at', { ascending: false });
+    const { data, error } = await db
+      .from('repos')
+      .select('*')
+      .eq('owner_key', ownerKey)
+      .order('created_at', { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data ?? []);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
 }
 
 // POST /api/repos  —  connect a new repo
 export async function POST(req: NextRequest) {
   try {
-  const body = await req.json();
+  const body = await req.json() as ConnectRepoRequest;
   const { repoUrl, githubToken, lingoApiKey } = body;
+  const existingOwnerKey = readOwnerKey(req);
+  const ownerKey = existingOwnerKey ?? createOwnerKey();
 
   if (!repoUrl || !githubToken) {
     return NextResponse.json({ error: 'repoUrl and githubToken are required' }, { status: 400 });
@@ -36,25 +56,33 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
 
   // Check if already connected
-  const { data: existing } = await db.from('repos').select('id').eq('full_name', fullName).single();
+  const { data: existing } = await db
+    .from('repos')
+    .select('id')
+    .eq('full_name', fullName)
+    .eq('owner_key', ownerKey)
+    .single();
   if (existing) return NextResponse.json({ error: 'Repo already connected', id: existing.id }, { status: 409 });
 
   // Validate token + get repo info
-  let repoInfo: any;
+  let repoInfo: GithubRepoInfo;
   try {
     repoInfo = await getRepoInfo(fullName, githubToken);
-  } catch (e: any) {
-    return NextResponse.json({ error: `GitHub error: ${e.message}` }, { status: 422 });
+  } catch (error: unknown) {
+    return NextResponse.json({
+      error: `GitHub error: ${error instanceof Error ? error.message : 'unknown error'}`,
+    }, { status: 422 });
   }
 
   const webhookSecret = crypto.randomBytes(20).toString('hex');
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const webhookUrl = `${appUrl}/api/webhooks/github`;
+  const sharedWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? webhookSecret;
 
   // Register webhook (best-effort — might fail on public repos without write access)
   let webhookId: number | null = null;
   try {
-    webhookId = await registerWebhook(fullName, githubToken, webhookUrl, webhookSecret);
+    webhookId = await registerWebhook(fullName, githubToken, webhookUrl, sharedWebhookSecret);
   } catch {
     // Continue without webhook; user can add manually
   }
@@ -64,23 +92,28 @@ export async function POST(req: NextRequest) {
     full_name:      fullName,
     owner,
     name,
+    owner_key:      ownerKey,
     default_branch: repoInfo.default_branch ?? 'main',
     github_token:   githubToken,
     lingo_api_key:  lingoApiKey ?? null,
     webhook_id:     webhookId,
-    webhook_secret: webhookSecret,
+    webhook_secret: sharedWebhookSecret,
   }).select().single();
 
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
 
   // Trigger initial analysis in the background
-  analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey, 'manual', db)
+  analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey ?? null, 'manual', db)
     .catch(console.error);
 
-  return NextResponse.json({ id: repo.id, fullName, webhookRegistered: !!webhookId }, { status: 201 });
-  } catch (e: any) {
-    console.error('POST /api/repos error:', e);
-    return NextResponse.json({ error: e.message ?? 'Internal server error' }, { status: 500 });
+  const response = NextResponse.json({ id: repo.id, fullName, webhookRegistered: !!webhookId }, { status: 201 });
+  if (!existingOwnerKey) attachOwnerKey(response, ownerKey);
+  return response;
+  } catch (error: unknown) {
+    console.error('POST /api/repos error:', error);
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+    }, { status: 500 });
   }
 }
 

@@ -40,6 +40,21 @@ function ThemeToggle() {
 
 interface HeaderProps { repo: RepoInfo; onRefresh?: () => Promise<void>; refreshing?: boolean; }
 
+function formatAnalyzedLabel(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'recently';
+
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 export default function Header({ repo, onRefresh, refreshing: externalRefreshing }: HeaderProps) {
   const [localRefreshing, setLocalRefreshing] = useState(false);
   const refreshing = externalRefreshing ?? localRefreshing;
@@ -50,8 +65,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
     try { await onRefresh?.(); } finally { setLocalRefreshing(false); }
   };
 
-  const lastAnalyzedDate = new Date(repo.lastAnalyzed);
-  const minutesAgo = Math.floor((Date.now() - lastAnalyzedDate.getTime()) / 60000);
+  const analyzedLabel = formatAnalyzedLabel(repo.lastAnalyzed);
 
   return (
     <header style={{
@@ -137,7 +151,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
 
         {/* Last analyzed */}
         <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
-          {refreshing ? 'analyzing…' : `analyzed ${minutesAgo}m ago`}
+          {refreshing ? 'analyzing…' : `analyzed ${analyzedLabel}`}
         </span>
 
         {/* Refresh */}

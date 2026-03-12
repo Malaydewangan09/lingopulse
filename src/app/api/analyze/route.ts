@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readOwnerKey } from '@/lib/owner-session';
 import { supabaseAdmin } from '@/lib/supabase';
 import { analyzeAndStore } from '@/app/api/repos/route';
 
@@ -6,9 +7,16 @@ import { analyzeAndStore } from '@/app/api/repos/route';
 export async function POST(req: NextRequest) {
   const { repoId } = await req.json();
   if (!repoId) return NextResponse.json({ error: 'repoId required' }, { status: 400 });
+  const ownerKey = readOwnerKey(req);
+  if (!ownerKey) return NextResponse.json({ error: 'Repo not found' }, { status: 404 });
 
   const db = supabaseAdmin();
-  const { data: repo } = await db.from('repos').select('*').eq('id', repoId).single();
+  const { data: repo } = await db
+    .from('repos')
+    .select('*')
+    .eq('id', repoId)
+    .eq('owner_key', ownerKey)
+    .single();
   if (!repo) return NextResponse.json({ error: 'Repo not found' }, { status: 404 });
 
   try {
@@ -30,7 +38,9 @@ export async function POST(req: NextRequest) {
       localesFound:     res.result.locales.length,
       filesAnalyzed:    res.result.analyzedFiles,
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+    }, { status: 500 });
   }
 }
