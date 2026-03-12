@@ -84,7 +84,16 @@ const STEPS = [
   { num: '03', title: 'Monitor forever',           desc: 'Webhook fires on every push. Dashboard updates live. Get alerted when coverage drops below your threshold.' },
 ];
 
-const FLOAT_BADGES = [
+interface FloatBadge {
+  label: string;
+  top: string;
+  left?: string;
+  right?: string;
+  delay: string;
+  color: string;
+}
+
+const FLOAT_BADGES: FloatBadge[] = [
   { label: '🇺🇸 en · 100%',   top: '8%',  left: '-6%',  delay: '0s',   color: 'var(--success)' },
   { label: '🇯🇵 ja · 52%',    top: '20%', right: '-8%', delay: '0.8s', color: 'var(--warning)' },
   { label: '🇩🇪 de · 71%',    top: '72%', left: '-4%',  delay: '1.4s', color: 'var(--warning)' },
@@ -180,7 +189,7 @@ export default function LandingPage() {
             View demo
           </button>
           <button
-            onClick={() => router.push('/connect')}
+            onClick={() => router.push('/auth')}
             style={{
               padding: '7px 18px', borderRadius: 7,
               background: 'var(--accent)', border: 'none',
@@ -254,7 +263,7 @@ export default function LandingPage() {
           marginBottom: 72, animationDelay: '0.24s',
         }}>
           <button
-            onClick={() => router.push('/connect')}
+            onClick={() => router.push('/auth')}
             style={{
               padding: '14px 32px', borderRadius: 10,
               background: 'var(--accent)', border: 'none',
@@ -297,8 +306,8 @@ export default function LandingPage() {
             <div key={i} style={{
               position: 'absolute',
               top: b.top,
-              left: (b as any).left,
-              right: (b as any).right,
+              left: b.left,
+              right: b.right,
               background: 'var(--card)',
               border: `1px solid ${b.color}44`,
               borderRadius: 100,
@@ -510,7 +519,7 @@ export default function LandingPage() {
           <RevealSection delay="0.3s">
             <div style={{ textAlign: 'center', marginTop: 60 }}>
               <button
-                onClick={() => router.push('/connect')}
+                onClick={() => router.push('/auth')}
                 style={{
                   padding: '14px 40px', borderRadius: 10,
                   background: 'var(--accent)', border: 'none',
@@ -546,7 +555,7 @@ export default function LandingPage() {
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
-                onClick={() => router.push('/connect')}
+                onClick={() => router.push('/auth')}
                 style={{
                   padding: '13px 32px', borderRadius: 10,
                   background: 'var(--accent)', border: 'none',
@@ -616,7 +625,7 @@ export default function LandingPage() {
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
           >Supabase</a>
           <span>·</span>
-          <a href="/connect" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Get started →</a>
+          <a href="/auth" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Get started →</a>
         </div>
       </footer>
     </div>

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchI18nFiles } from '@/lib/github';
 import { analyzeRepo } from '@/lib/analyze';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 // GET /api/debug/scan?repo=owner/repo&token=ghp_xxx
 // Quick dry-run: shows what i18n files are found and their coverage
 export async function GET(req: NextRequest) {
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const repo  = searchParams.get('repo');
   const token = searchParams.get('token');
@@ -45,7 +49,7 @@ export async function GET(req: NextRequest) {
         missingKeys: l.missingKeys,
       })),
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
   }
 }

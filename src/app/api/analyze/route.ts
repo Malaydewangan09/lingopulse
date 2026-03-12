@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readOwnerKey } from '@/lib/owner-session';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { analyzeAndStore } from '@/app/api/repos/route';
 
@@ -7,15 +7,15 @@ import { analyzeAndStore } from '@/app/api/repos/route';
 export async function POST(req: NextRequest) {
   const { repoId } = await req.json();
   if (!repoId) return NextResponse.json({ error: 'repoId required' }, { status: 400 });
-  const ownerKey = readOwnerKey(req);
-  if (!ownerKey) return NextResponse.json({ error: 'Repo not found' }, { status: 404 });
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = supabaseAdmin();
   const { data: repo } = await db
     .from('repos')
     .select('*')
     .eq('id', repoId)
-    .eq('owner_key', ownerKey)
+    .eq('owner_user_id', user.id)
     .single();
   if (!repo) return NextResponse.json({ error: 'Repo not found' }, { status: 404 });
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getRepoInfo, registerWebhook } from '@/lib/github';
 import { fetchI18nFiles } from '@/lib/github';
 import { analyzeRepo, getLocaleMetadata } from '@/lib/analyze';
-import { attachOwnerKey, createOwnerKey, readOwnerKey } from '@/lib/owner-session';
 import crypto from 'crypto';
 
 interface ConnectRepoRequest {
@@ -17,16 +17,16 @@ interface GithubRepoInfo {
 }
 
 // GET /api/repos  —  list all connected repos
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const ownerKey = readOwnerKey(req);
-    if (!ownerKey) return NextResponse.json([]);
+    const user = await getAuthenticatedUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const db = supabaseAdmin();
     const { data, error } = await db
       .from('repos')
       .select('*')
-      .eq('owner_key', ownerKey)
+      .eq('owner_user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data ?? []);
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
   try {
   const body = await req.json() as ConnectRepoRequest;
   const { repoUrl, githubToken, lingoApiKey } = body;
-  const existingOwnerKey = readOwnerKey(req);
-  const ownerKey = existingOwnerKey ?? createOwnerKey();
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   if (!repoUrl || !githubToken) {
     return NextResponse.json({ error: 'repoUrl and githubToken are required' }, { status: 400 });
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     .from('repos')
     .select('id')
     .eq('full_name', fullName)
-    .eq('owner_key', ownerKey)
+    .eq('owner_user_id', user.id)
     .single();
   if (existing) return NextResponse.json({ error: 'Repo already connected', id: existing.id }, { status: 409 });
 
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     full_name:      fullName,
     owner,
     name,
-    owner_key:      ownerKey,
+    owner_user_id:  user.id,
     default_branch: repoInfo.default_branch ?? 'main',
     github_token:   githubToken,
     lingo_api_key:  lingoApiKey ?? null,
@@ -106,9 +106,7 @@ export async function POST(req: NextRequest) {
   analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey ?? null, 'manual', db)
     .catch(console.error);
 
-  const response = NextResponse.json({ id: repo.id, fullName, webhookRegistered: !!webhookId }, { status: 201 });
-  if (!existingOwnerKey) attachOwnerKey(response, ownerKey);
-  return response;
+  return NextResponse.json({ id: repo.id, fullName, webhookRegistered: !!webhookId }, { status: 201 });
   } catch (error: unknown) {
     console.error('POST /api/repos error:', error);
     return NextResponse.json({

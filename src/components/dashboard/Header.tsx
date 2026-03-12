@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, GitBranch, ChevronDown, Bell, ExternalLink, Sun, Moon } from 'lucide-react';
 import type { RepoInfo } from '@/lib/types';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import { useRouter } from 'next/navigation';
 
 function ThemeToggle() {
   const [dark, setDark] = useState(true);
@@ -56,6 +58,7 @@ function formatAnalyzedLabel(value: string) {
 }
 
 export default function Header({ repo, onRefresh, refreshing: externalRefreshing }: HeaderProps) {
+  const router = useRouter();
   const [localRefreshing, setLocalRefreshing] = useState(false);
   const refreshing = externalRefreshing ?? localRefreshing;
 
@@ -63,6 +66,12 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
     if (refreshing) return;
     setLocalRefreshing(true);
     try { await onRefresh?.(); } finally { setLocalRefreshing(false); }
+  };
+
+  const handleSignOut = async () => {
+    const supabase = createBrowserSupabaseClient();
+    await supabase.auth.signOut();
+    router.replace('/landing');
   };
 
   const analyzedLabel = formatAnalyzedLabel(repo.lastAnalyzed);
@@ -202,6 +211,22 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
         >
           <ExternalLink size={14} />
         </a>
+
+        <button
+          onClick={() => void handleSignOut()}
+          title="Sign out"
+          style={{
+            height: 32, padding: '0 10px', borderRadius: 7,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--card)', border: '1px solid var(--border)',
+            color: 'var(--text-2)', cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s',
+            fontFamily: 'DM Mono, monospace', fontSize: 11,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+        >
+          sign out
+        </button>
 
         <ThemeToggle />
       </div>

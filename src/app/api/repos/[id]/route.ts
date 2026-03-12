@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readOwnerKey } from '@/lib/owner-session';
+import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // DELETE /api/repos/[id]  —  disconnect & remove a repo
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    void req;
     const { id } = await params;
-    const ownerKey = readOwnerKey(req);
-    if (!ownerKey) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const user = await getAuthenticatedUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const db = supabaseAdmin();
-    const { data: repo } = await db.from('repos').select('id').eq('id', id).eq('owner_key', ownerKey).single();
+    const { data: repo } = await db
+      .from('repos')
+      .select('id')
+      .eq('id', id)
+      .eq('owner_user_id', user.id)
+      .single();
     if (!repo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     // Cascade deletes handled by Supabase FK or we delete manually
@@ -33,9 +39,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
 // GET /api/repos/[id]  —  full dashboard data for one repo
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  void req;
   const { id } = await params;
-  const ownerKey = readOwnerKey(req);
-  if (!ownerKey) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = supabaseAdmin();
 
@@ -44,7 +51,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .from('repos')
     .select('*')
     .eq('id', id)
-    .eq('owner_key', ownerKey)
+    .eq('owner_user_id', user.id)
     .single();
   if (repoErr || !repo) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

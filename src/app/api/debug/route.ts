@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 // GET /api/debug  —  check which env vars are configured (values masked)
 export async function GET() {
+  const user = await getAuthenticatedUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const checks = {
     NEXT_PUBLIC_SUPABASE_URL:     !!process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY:!!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -25,8 +29,8 @@ export async function GET() {
       const { error } = await db.from('repos').select('id').limit(1);
       supabaseOk = !error;
       if (error) supabaseError = error.message;
-    } catch (e: any) {
-      supabaseError = e.message;
+    } catch (error: unknown) {
+      supabaseError = error instanceof Error ? error.message : 'Unknown Supabase error';
     }
   }
 

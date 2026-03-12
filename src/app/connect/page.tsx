@@ -1,13 +1,19 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield } from 'lucide-react';
+import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield, LogOut } from 'lucide-react';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
 type Step = 'form' | 'analyzing' | 'done' | 'error' | 'exists';
 
 interface AnalysisProgress {
   step: string;
   pct: number;
+}
+
+interface ConnectRepoResponse {
+  id?: string;
+  error?: string;
 }
 
 const PROGRESS_STEPS: AnalysisProgress[] = [
@@ -31,8 +37,13 @@ export default function ConnectPage() {
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [repoId, setRepoId]       = useState('');
   const [existingRepoId, setExistingRepoId] = useState('');
+
+  const handleSignOut = async () => {
+    const supabase = createBrowserSupabaseClient();
+    await supabase.auth.signOut();
+    router.replace('/landing');
+  };
 
   const runProgressAnimation = async () => {
     for (const p of PROGRESS_STEPS) {
@@ -58,7 +69,7 @@ export default function ConnectPage() {
       });
       // Safe JSON parse — server might return empty body on crash
       const text = await res.text();
-      let data: any = {};
+      let data: ConnectRepoResponse = {};
       try { data = JSON.parse(text); } catch {
         await animPromise;
         setErrorMsg(`Server error (${res.status}): ${text.slice(0, 120) || 'empty response — check your Supabase env vars'}`);
@@ -81,13 +92,19 @@ export default function ConnectPage() {
         return;
       }
 
-      setRepoId(data.id);
+      const repoId = data.id;
+      if (!repoId) {
+        setErrorMsg('Repo connected but no dashboard id was returned');
+        setStep('error');
+        return;
+      }
+
       setStep('done');
 
-      setTimeout(() => router.push(`/repo/${data.id}`), 1200);
-    } catch (e: any) {
+      setTimeout(() => router.push(`/repo/${repoId}`), 1200);
+    } catch (error: unknown) {
       await animPromise;
-      setErrorMsg(e.message);
+      setErrorMsg(error instanceof Error ? error.message : 'Request failed');
       setStep('error');
     }
   };
@@ -98,6 +115,21 @@ export default function ConnectPage() {
       alignItems: 'center', justifyContent: 'center',
       padding: '24px', position: 'relative', zIndex: 1,
     }}>
+      <button
+        onClick={() => void handleSignOut()}
+        style={{
+          position: 'absolute', top: 24, right: 24,
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '8px 12px', borderRadius: 8,
+          border: '1px solid var(--border)', background: 'transparent',
+          color: 'var(--text-2)', fontSize: 11, fontFamily: 'DM Mono, monospace',
+          cursor: 'pointer',
+        }}
+      >
+        <LogOut size={12} />
+        Sign out
+      </button>
+
       {/* Logo */}
       <div style={{ marginBottom: 40, textAlign: 'center' }} className="animate-fade-up">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
