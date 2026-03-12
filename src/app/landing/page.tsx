@@ -54,34 +54,79 @@ const HEATMAP_ROWS = [
 
 const MODULES = ['common', 'auth', 'dashboard', 'pricing', 'errors', 'onboard'];
 
-const FEATURES = [
-  {
-    icon: '⬛',
-    gradient: 'linear-gradient(135deg, #00E5A0 0%, #00B87A 100%)',
-    title: 'Coverage Heatmap',
-    desc: 'See exactly which locale × module combinations are missing. Spot translation gaps before they ship to production.',
-    stat: '100% visibility',
-  },
-  {
-    icon: '📈',
-    gradient: 'linear-gradient(135deg, #4B9EFF 0%, #2563EB 100%)',
-    title: 'AI Quality Scoring',
-    desc: 'Lingo.dev scores every translation 1–10. Know if your Japanese copy sounds natural or like it was machine-translated.',
-    stat: '10-point scale',
-  },
-  {
-    icon: '🔒',
-    gradient: 'linear-gradient(135deg, #FF6B35 0%, #DC2626 100%)',
-    title: 'PR Gate Checks',
-    desc: 'Every PR gets a coverage check. Merge with confidence — or catch regressions before they hit your users.',
-    stat: 'Zero regressions',
-  },
+const QUALITY_SIGNALS = [
+  { locale: 'ja', score: '9.4', width: '94%', note: 'checkout copy reads native', color: 'var(--accent)' },
+  { locale: 'fr', score: '8.8', width: '88%', note: 'pricing phrasing is stable', color: 'var(--blue)' },
+  { locale: 'de', score: '6.1', width: '61%', note: 'onboarding tone needs review', color: 'var(--warning)' },
+];
+
+const PR_ACTIVITY = [
+  { title: 'checkout/ja missing 4 keys', meta: 'PR #284 blocked', color: 'var(--danger)' },
+  { title: 'es coverage recovered to 95%', meta: 'hotfix verified', color: 'var(--accent)' },
+  { title: 'pricing/fr dropped below threshold', meta: 'review queued', color: 'var(--warning)' },
+];
+
+const FEATURE_SUMMARY = [
+  { label: 'risk cluster', value: 'checkout · de + ja', tone: 'var(--warning)' },
+  { label: 'release state', value: 'monitoring live', tone: 'var(--accent)' },
+];
+
+const RELEASE_SURFACE = [
+  { module: 'checkout', detail: 'de + ja exposed', coverage: 61, state: 'needs review', tone: 'var(--warning)' },
+  { module: 'pricing', detail: 'fr wording drift', coverage: 88, state: 'watch closely', tone: 'var(--blue)' },
+  { module: 'errors', detail: 'ja gaps remain', coverage: 58, state: 'missing keys', tone: 'var(--danger)' },
+  { module: 'onboarding', detail: 'es + fr stable', coverage: 92, state: 'healthy', tone: 'var(--accent)' },
 ];
 
 const STEPS = [
-  { num: '01', title: 'Connect your GitHub repo', desc: 'Paste your repo URL and GitHub token. Lingo Pulse auto-registers a webhook — no YAML, no config files.' },
-  { num: '02', title: 'We scan your i18n files',  desc: 'Detects JSON/YAML locale files, maps coverage per locale × module, and scores quality with Lingo.dev AI.' },
-  { num: '03', title: 'Monitor forever',           desc: 'Webhook fires on every push. Dashboard updates live. Get alerted when coverage drops below your threshold.' },
+  {
+    num: '01',
+    kicker: 'Access',
+    title: 'Connect your GitHub repo',
+    desc: 'Sign in and pick a repo from your GitHub session, with a manual fallback when you need a different source.',
+    signal: 'OAuth session',
+    tone: 'var(--accent)',
+    previewTitle: 'Connected repositories',
+    previewNote: 'Session token is active',
+    meter: { value: 100, label: 'repo access ready' },
+    previewItems: [
+      { label: 'checkout-service', state: 'selected', tone: 'var(--accent)' },
+      { label: 'marketing-web', state: 'available', tone: 'rgba(148,163,184,0.88)' },
+      { label: 'docs-portal', state: 'available', tone: 'rgba(148,163,184,0.88)' },
+    ],
+  },
+  {
+    num: '02',
+    kicker: 'Scan',
+    title: 'We map the i18n surface fast',
+    desc: 'Locale files, module coverage, and translation quality get structured into one scan without extra setup.',
+    signal: 'Coverage scan',
+    tone: 'var(--blue)',
+    previewTitle: 'Scan summary',
+    previewNote: 'Initial analysis runs automatically',
+    meter: { value: 78, label: 'analysis complete' },
+    previewItems: [
+      { label: '12 locales mapped', state: 'ready', tone: 'var(--blue)' },
+      { label: '247 missing keys flagged', state: 'review', tone: 'var(--warning)' },
+      { label: '3 low-confidence strings', state: 'queued', tone: 'var(--accent)' },
+    ],
+  },
+  {
+    num: '03',
+    kicker: 'Monitor',
+    title: 'Keep release risk visible',
+    desc: 'Pushes refresh the dashboard and surface regressions early, so localization issues stay out of production.',
+    signal: 'Live updates',
+    tone: 'var(--warning)',
+    previewTitle: 'Release watch',
+    previewNote: 'Signals refresh after every push',
+    meter: { value: 92, label: 'watchers active' },
+    previewItems: [
+      { label: 'PR #284 blocked on ja gaps', state: 'blocked', tone: 'var(--danger)' },
+      { label: 'fr tone drift queued for review', state: 'watch', tone: 'var(--warning)' },
+      { label: 'dashboard refreshed after push', state: 'live', tone: 'var(--accent)' },
+    ],
+  },
 ];
 
 interface FloatBadge {
@@ -135,6 +180,17 @@ function RevealSection({ children, delay = '0s', style = {} }: { children: React
   );
 }
 
+const LANDING_SHELL_MAX = 1240;
+const LANDING_GUTTER = '28px';
+const LANDING_SECTION_PADDING = `88px ${LANDING_GUTTER} 72px`;
+const LANDING_BAND_PADDING = `22px ${LANDING_GUTTER}`;
+const LANDING_WIDE_SECTION_PADDING = `88px ${LANDING_GUTTER}`;
+const LANDING_CTA_PADDING = `72px ${LANDING_GUTTER}`;
+const LANDING_FOOTER_PADDING = `24px ${LANDING_GUTTER}`;
+const DARK_PANEL_TEXT = '#D9E4F1';
+const DARK_PANEL_MUTED = '#94A8BE';
+const DARK_PANEL_DIM = '#667A92';
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
@@ -150,7 +206,7 @@ export default function LandingPage() {
       {/* ── Nav ── */}
       <nav style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 40px', borderBottom: '1px solid var(--border)',
+        padding: `14px ${LANDING_GUTTER}`, borderBottom: '1px solid var(--border)',
         background: 'color-mix(in srgb, var(--bg) 90%, transparent)', backdropFilter: 'blur(14px)',
         position: 'sticky', top: 0, zIndex: 50,
         animation: 'fadeIn 0.5s ease both',
@@ -201,14 +257,14 @@ export default function LandingPage() {
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1';    e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            Get started →
+            Start monitoring
           </button>
         </div>
       </nav>
 
       {/* ── Hero ── */}
       <section style={{
-        maxWidth: 1100, margin: '0 auto', padding: '88px 40px 72px',
+        maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING,
         display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
         position: 'relative',
       }}>
@@ -221,7 +277,7 @@ export default function LandingPage() {
           marginBottom: 28, animationDelay: '0s',
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', animation: 'pulseDot 2s infinite' }} />
-          Powered by Lingo.dev · Built for global teams
+          Repository-based i18n monitoring
         </div>
 
         {/* Headline */}
@@ -232,7 +288,7 @@ export default function LandingPage() {
           animationDelay: '0.08s',
           color: 'var(--text-1)',
         }}>
-          Know when your translations break{' '}
+          Translation coverage, quality, and PR checks{' '}
           <span style={{
             backgroundImage: dark
               ? 'linear-gradient(135deg, #ffffff 0%, #00E5A0 60%)'
@@ -245,7 +301,7 @@ export default function LandingPage() {
             animation: 'gradientShift 5s linear infinite',
             display: 'inline',
           }}>
-            before your users do.
+            in one dashboard.
           </span>
         </h1>
 
@@ -254,7 +310,7 @@ export default function LandingPage() {
           fontSize: 18, color: 'var(--text-2)', maxWidth: 560,
           lineHeight: 1.65, marginBottom: 44, animationDelay: '0.16s',
         }}>
-          Lingo Pulse monitors i18n coverage, AI quality scores, and PR safety gates across every locale in your codebase.
+          Connect a repository to scan locale files, detect missing keys, score translation quality, and track release regressions.
         </p>
 
         {/* CTAs */}
@@ -275,7 +331,7 @@ export default function LandingPage() {
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(0,229,160,0.4)'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(0,229,160,0.3)'; }}
           >
-            Connect your repo →
+            Connect repository
           </button>
           <button
             onClick={() => router.push('/')}
@@ -289,7 +345,7 @@ export default function LandingPage() {
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
           >
-            View live demo
+            Open demo
           </button>
         </div>
 
@@ -389,10 +445,10 @@ export default function LandingPage() {
         <section style={{
           borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
           background: 'linear-gradient(90deg, rgba(0,229,160,0.025) 0%, rgba(75,158,255,0.015) 100%)',
-          padding: '22px 40px',
+          padding: LANDING_BAND_PADDING,
         }}>
           <div style={{
-            maxWidth: 1100, margin: '0 auto',
+            maxWidth: LANDING_SHELL_MAX, margin: '0 auto',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 0, flexWrap: 'wrap',
           }}>
@@ -419,101 +475,481 @@ export default function LandingPage() {
       </RevealSection>
 
       {/* ── Features ── */}
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '88px 40px 72px' }}>
+      <section style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING }}>
         <RevealSection>
-          <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.03em', textAlign: 'center', marginBottom: 12 }}>
-            Everything you need to ship i18n with confidence
-          </h2>
-          <p style={{ textAlign: 'center', color: 'var(--text-2)', fontSize: 16, marginBottom: 56, maxWidth: 560, margin: '12px auto 56px' }}>
-            Built for engineering teams that care about quality in every language.
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '5px 14px',
+                borderRadius: 100,
+                background: 'rgba(75,158,255,0.08)',
+                border: '1px solid rgba(75,158,255,0.18)',
+                fontSize: 12,
+                color: 'var(--blue)',
+                fontFamily: 'DM Mono, monospace',
+                marginBottom: 22,
+              }}
+            >
+              Translation operations
+            </div>
+            <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 42px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: 12, maxWidth: 760 }}>
+              One release surface for coverage, quality, and PR checks
+            </h2>
+            <p style={{ color: 'var(--text-2)', fontSize: 16, maxWidth: 620, lineHeight: 1.7 }}>
+              Monitor locale coverage, translation quality, and merge risk without switching tools.
+            </p>
+          </div>
         </RevealSection>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-          {FEATURES.map(({ gradient, title, desc, stat }, i) => (
-            <RevealSection key={title} delay={`${i * 0.1}s`}>
-              <div style={{
-                background: 'var(--card)', border: '1px solid var(--border)',
-                borderRadius: 14, padding: '28px 24px', height: '100%',
-                transition: 'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
-                position: 'relative', overflow: 'hidden',
+        <div className="landing-feature-grid">
+          <RevealSection>
+            <div
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: 20,
+                border: '1px solid rgba(0,229,160,0.2)',
+                background: 'linear-gradient(180deg, rgba(8,15,27,0.98) 0%, rgba(10,17,31,0.96) 100%)',
+                boxShadow: '0 44px 120px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+                padding: 30,
+                color: DARK_PANEL_TEXT,
               }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.borderColor = 'var(--border-bright)';
-                  el.style.transform = 'translateY(-4px)';
-                  el.style.boxShadow = '0 20px 60px rgba(0,0,0,0.4)';
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.borderColor = 'var(--border)';
-                  el.style.transform = 'translateY(0)';
-                  el.style.boxShadow = 'none';
+            >
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.35 }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 18% 18%, rgba(0,229,160,0.16), transparent 34%)' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 82% 24%, rgba(75,158,255,0.14), transparent 30%)' }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)' }} />
+
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div className="landing-feature-panel-top">
+                  <div style={{ maxWidth: 420 }}>
+                    <div className="tag tag-accent" style={{ marginBottom: 14 }}>Release surface</div>
+                    <h3 style={{ fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 12, color: DARK_PANEL_TEXT }}>
+                      Prioritize the modules that need work first.
+                    </h3>
+                    <p style={{ fontSize: 14, color: DARK_PANEL_MUTED, lineHeight: 1.7 }}>
+                      Rank modules by coverage risk and review state, then move into the dashboard for the full locale matrix.
+                    </p>
+                  </div>
+
+                  <div className="landing-feature-micro-grid">
+                    {FEATURE_SUMMARY.map(item => (
+                      <div
+                        key={item.label}
+                        style={{
+                          borderRadius: 14,
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          background: 'rgba(255,255,255,0.025)',
+                          padding: '12px 14px',
+                        }}
+                      >
+                        <div style={{ fontSize: 10, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace', marginBottom: 6 }}>
+                          {item.label}
+                        </div>
+                        <div style={{ fontSize: 13, color: item.tone, fontWeight: 600 }}>
+                          {item.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 26,
+                    borderRadius: 18,
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'rgba(11,17,30,0.86)',
+                    padding: 18,
+                    backdropFilter: 'blur(10px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 22px 70px rgba(0,0,0,0.35)',
+                  }}
+                >
+                  <div
+                    className="landing-scan-band"
+                    style={{
+                      position: 'absolute',
+                      inset: '44px 14px 62px 82px',
+                      borderRadius: 16,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <div
+                      className="animate-scan-sweep"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '38%',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.11), transparent)',
+                        filter: 'blur(12px)',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+                    <span className="status-live" />
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_MUTED }}>
+                      active release lanes
+                    </span>
+                    <span className="tag tag-neutral" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>4 hotspots</span>
+                    <span className="tag tag-neutral" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>live priorities</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {RELEASE_SURFACE.map((lane, index) => (
+                      <div
+                        key={lane.module}
+                        className="landing-surface-row"
+                        style={{
+                          display: 'grid',
+                          gap: 14,
+                          alignItems: 'center',
+                          borderRadius: 14,
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          background: 'rgba(255,255,255,0.02)',
+                          padding: '14px 16px',
+                          position: 'relative',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: 2,
+                            background: lane.tone,
+                            opacity: 0.7,
+                          }}
+                        />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: DARK_PANEL_TEXT }}>
+                              {lane.module}
+                            </span>
+                            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: lane.tone }}>
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 12, color: DARK_PANEL_DIM }}>
+                            {lane.detail}
+                          </div>
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 8, fontFamily: 'DM Mono, monospace', fontSize: 11 }}>
+                            <span style={{ color: DARK_PANEL_DIM }}>coverage</span>
+                            <span style={{ color: lane.tone }}>{lane.coverage}%</span>
+                          </div>
+                          <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.05)', overflow: 'hidden', marginBottom: 8 }}>
+                            <div
+                              style={{
+                                width: `${lane.coverage}%`,
+                                height: '100%',
+                                borderRadius: 999,
+                                background: `linear-gradient(90deg, rgba(255,255,255,0.1), ${lane.tone})`,
+                              }}
+                            />
+                          </div>
+                          <div style={{ fontSize: 11, color: lane.tone, fontFamily: 'DM Mono, monospace', textAlign: 'right' }}>
+                            {lane.state}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginTop: 18 }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <span className="tag tag-accent">healthy</span>
+                      <span className="tag tag-warning">watch</span>
+                      <span className="tag tag-danger">blocked</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace' }}>
+                      Full locale matrix stays in the dashboard
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </RevealSection>
+
+          <div className="landing-feature-side-stack">
+            <RevealSection delay="0.08s">
+              <div
+                style={{
+                  borderRadius: 22,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'linear-gradient(180deg, rgba(11,18,34,0.98) 0%, rgba(9,15,27,0.96) 100%)',
+                  boxShadow: '0 24px 70px rgba(0,0,0,0.35)',
+                  padding: 24,
+                  height: '100%',
+                  color: DARK_PANEL_TEXT,
                 }}
               >
-                {/* Top gradient line */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: gradient, opacity: 0.8 }} />
+                <div className="tag" style={{ marginBottom: 14, background: 'rgba(75,158,255,0.12)', borderColor: 'rgba(75,158,255,0.22)', color: 'var(--blue)' }}>
+                  AI quality scoring
+                </div>
+                <h3 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 10, color: DARK_PANEL_TEXT }}>
+                  Review low-confidence copy before release.
+                </h3>
+                <p style={{ fontSize: 14, color: DARK_PANEL_MUTED, lineHeight: 1.7, marginBottom: 20 }}>
+                  Lingo.dev scores translation tone so low-confidence strings can be reviewed early.
+                </p>
 
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, marginBottom: 18,
-                  background: gradient, opacity: 0.9,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18,
-                }} />
-
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.65, marginBottom: 18 }}>{desc}</p>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  padding: '3px 10px', borderRadius: 100,
-                  background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
-                  fontSize: 11, color: 'var(--accent)', fontFamily: 'DM Mono, monospace',
-                }}>
-                  {stat}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {QUALITY_SIGNALS.map(signal => (
+                    <div
+                      key={signal.locale}
+                      style={{
+                        borderRadius: 14,
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        background: 'rgba(255,255,255,0.025)',
+                        padding: '12px 14px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: DARK_PANEL_TEXT }}>{signal.locale}</span>
+                          <span style={{ fontSize: 12, color: DARK_PANEL_DIM }}>{signal.note}</span>
+                        </div>
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: signal.color }}>{signal.score}/10</span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 100, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            width: signal.width,
+                            height: '100%',
+                            borderRadius: 100,
+                            background: `linear-gradient(90deg, rgba(255,255,255,0.15), ${signal.color})`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </RevealSection>
-          ))}
+
+            <RevealSection delay="0.16s">
+              <div
+                style={{
+                  borderRadius: 22,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'linear-gradient(180deg, rgba(16,15,24,0.98) 0%, rgba(11,15,27,0.96) 100%)',
+                  boxShadow: '0 24px 70px rgba(0,0,0,0.35)',
+                  padding: 24,
+                  height: '100%',
+                  color: DARK_PANEL_TEXT,
+                }}
+              >
+                <div className="tag" style={{ marginBottom: 14, background: 'rgba(255,107,53,0.12)', borderColor: 'rgba(255,107,53,0.22)', color: 'var(--orange)' }}>
+                  PR gate checks
+                </div>
+                <h3 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 10, color: DARK_PANEL_TEXT }}>
+                  Block risky localization changes at merge time.
+                </h3>
+                <p style={{ fontSize: 14, color: DARK_PANEL_MUTED, lineHeight: 1.7, marginBottom: 20 }}>
+                  Each push gets scored against coverage, missing keys, and translation quality before it lands.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {PR_ACTIVITY.slice(0, 2).map(item => (
+                    <div
+                      key={item.title}
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'flex-start',
+                        borderRadius: 14,
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        background: 'rgba(255,255,255,0.025)',
+                        padding: '12px 14px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 9,
+                          height: 9,
+                          borderRadius: '50%',
+                          marginTop: 6,
+                          background: item.color,
+                          boxShadow: `0 0 16px ${item.color}55`,
+                          flexShrink: 0,
+                          animation: 'pulseDot 1.8s ease-in-out infinite',
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontSize: 13, color: DARK_PANEL_TEXT, fontWeight: 600, marginBottom: 4 }}>
+                          {item.title}
+                        </div>
+                        <div style={{ fontSize: 12, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace' }}>
+                          {item.meta}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
+                  <span className="tag tag-danger">merge block</span>
+                  <span className="tag tag-accent">quality check</span>
+                </div>
+              </div>
+            </RevealSection>
+          </div>
         </div>
       </section>
 
       {/* ── How it works ── */}
-      <section style={{ borderTop: '1px solid var(--border)', padding: '88px 40px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <section style={{ borderTop: '1px solid var(--border)', padding: LANDING_WIDE_SECTION_PADDING }}>
+        <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
           <RevealSection>
             <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.03em', textAlign: 'center', marginBottom: 12 }}>
-              Up and running in 3 steps
+              Set up in 3 steps
             </h2>
             <p style={{ textAlign: 'center', color: 'var(--text-2)', fontSize: 16, marginBottom: 60, maxWidth: 480, margin: '12px auto 60px' }}>
-              No config files. No YAML. Just paste your repo URL and go.
+              Sign in, select a repository, and start monitoring locale coverage in minutes.
             </p>
           </RevealSection>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, position: 'relative' }}>
-            {/* Connector lines */}
-            <div style={{
-              position: 'absolute', top: 28, left: '16.67%', right: '16.67%', height: 1,
-              background: 'linear-gradient(90deg, transparent, var(--border), var(--border), transparent)',
-              zIndex: 0,
-            }} />
-
-            {STEPS.map(({ num, title, desc }, i) => (
-              <RevealSection key={num} delay={`${i * 0.12}s`} style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{
-                  width: 56, height: 56, borderRadius: 16, marginBottom: 20,
-                  background: 'var(--card)', border: '1px solid var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 0 0 4px var(--bg)',
-                }}>
-                  <span style={{
-                    fontFamily: 'DM Mono, monospace', fontSize: 16, fontWeight: 700,
-                    color: 'var(--accent)',
-                  }}>{num}</span>
+          <div className="landing-process-shell">
+            <div className="landing-process-inner">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <span className="tag tag-accent">3 minute setup</span>
+                  <span className="tag tag-neutral">GitHub native</span>
+                  <span className="tag tag-neutral">No config</span>
                 </div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.65 }}>{desc}</p>
-              </RevealSection>
-            ))}
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_DIM }}>
+                  Single flow from repository access to release monitoring
+                </div>
+              </div>
+
+              <div className="landing-process-list">
+                {STEPS.map(({ num, kicker, title, desc, signal, tone, previewTitle, previewNote, previewItems, meter }, i) => (
+                  <RevealSection key={num} delay={`${i * 0.12}s`}>
+                    <div className="landing-process-row">
+                      <div className="landing-process-index-wrap">
+                        <div
+                          className="landing-process-index"
+                          style={{
+                            color: tone,
+                            borderColor: 'rgba(255,255,255,0.08)',
+                            background: 'rgba(255,255,255,0.04)',
+                          }}
+                        >
+                          {num}
+                        </div>
+                        {i < STEPS.length - 1 && <div className="landing-process-segment" />}
+                      </div>
+
+                      <div className="landing-process-copy">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: 10, color: tone, fontFamily: 'DM Mono, monospace', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                            {kicker}
+                          </div>
+                          <span
+                            className="tag tag-neutral"
+                            style={{
+                              background: 'rgba(255,255,255,0.04)',
+                              borderColor: 'rgba(255,255,255,0.08)',
+                              color: DARK_PANEL_DIM,
+                            }}
+                          >
+                            {signal}
+                          </span>
+                        </div>
+
+                        <h3 style={{ fontSize: 'clamp(22px, 2.5vw, 28px)', fontWeight: 700, marginBottom: 12, letterSpacing: '-0.03em', color: DARK_PANEL_TEXT, lineHeight: 1.12 }}>
+                          {title}
+                        </h3>
+                        <p style={{ fontSize: 15, color: DARK_PANEL_MUTED, lineHeight: 1.75, maxWidth: 460 }}>
+                          {desc}
+                        </p>
+                      </div>
+
+                      <div
+                        className="landing-process-preview"
+                        style={{
+                          borderColor: 'rgba(255,255,255,0.07)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 50px rgba(0,0,0,0.18)',
+                        }}
+                      >
+                        <div style={{ position: 'absolute', inset: '0 0 auto 0', height: 1, background: `linear-gradient(90deg, transparent, ${tone}, transparent)`, opacity: 0.3 }} />
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+                          <div>
+                            <div style={{ fontSize: 10, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+                              {previewTitle}
+                            </div>
+                            <div style={{ fontSize: 12, color: DARK_PANEL_MUTED }}>
+                              {previewNote}
+                            </div>
+                          </div>
+                          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: tone }}>
+                            {meter.value}%
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                          {previewItems.map((item, itemIndex) => (
+                            <div
+                              key={item.label}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '10px 0',
+                                borderBottom: itemIndex < previewItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.tone, flexShrink: 0 }} />
+                                <span style={{ fontSize: 12, color: DARK_PANEL_TEXT, minWidth: 0 }}>
+                                  {item.label}
+                                </span>
+                              </div>
+                              <span
+                                className="tag tag-neutral"
+                                style={{
+                                  background: 'rgba(255,255,255,0.04)',
+                                  borderColor: 'rgba(255,255,255,0.08)',
+                                  color: item.tone,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {item.state}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.05)', overflow: 'hidden', marginBottom: 8 }}>
+                          <div
+                            style={{
+                              width: `${meter.value}%`,
+                              height: '100%',
+                              borderRadius: 999,
+                              background: `linear-gradient(90deg, rgba(255,255,255,0.12), ${tone})`,
+                            }}
+                          />
+                        </div>
+                        <div style={{ fontSize: 10, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace' }}>
+                          {meter.label}
+                        </div>
+                      </div>
+                    </div>
+                  </RevealSection>
+                ))}
+              </div>
+            </div>
           </div>
 
           <RevealSection delay="0.3s">
@@ -531,7 +967,7 @@ export default function LandingPage() {
                 onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(0,229,160,0.4)'; }}
                 onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(0,229,160,0.25)'; }}
               >
-                Get started — it&apos;s free →
+                Start monitoring
               </button>
             </div>
           </RevealSection>
@@ -542,16 +978,16 @@ export default function LandingPage() {
       <RevealSection>
         <section style={{
           borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-          padding: '72px 40px', position: 'relative', overflow: 'hidden',
+          padding: LANDING_CTA_PADDING, position: 'relative', overflow: 'hidden',
           background: 'radial-gradient(ellipse 80% 160% at 50% 50%, rgba(0,229,160,0.06) 0%, transparent 70%)',
         }}>
-          <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
             <h2 style={{ fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 14 }}>
-              Stop shipping broken translations.
-              <br /><span style={{ color: 'var(--accent)' }}>Start shipping with confidence.</span>
+              Monitor translation issues before release.
+              <br /><span style={{ color: 'var(--accent)' }}>Use one dashboard for coverage, quality, and PR checks.</span>
             </h2>
             <p style={{ color: 'var(--text-2)', fontSize: 15, marginBottom: 36 }}>
-              Connect your first repo in under 2 minutes. Free forever.
+              Connect a repository and start scanning locale files in minutes.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
@@ -567,7 +1003,7 @@ export default function LandingPage() {
                 onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                 onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
-                Connect your repo →
+                Connect repository
               </button>
               <button
                 onClick={() => router.push('/')}
@@ -581,7 +1017,7 @@ export default function LandingPage() {
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
-                View demo first
+                Open demo
               </button>
             </div>
           </div>
@@ -590,7 +1026,7 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer style={{
-        borderTop: '1px solid var(--border)', padding: '24px 40px',
+        borderTop: '1px solid var(--border)', padding: LANDING_FOOTER_PADDING,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -625,7 +1061,7 @@ export default function LandingPage() {
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
           >Supabase</a>
           <span>·</span>
-          <a href="/auth" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Get started →</a>
+          <a href="/auth" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Start monitoring</a>
         </div>
       </footer>
     </div>

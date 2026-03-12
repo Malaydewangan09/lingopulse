@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield, LogOut } from 'lucide-react';
+import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield, LogOut, Search, RefreshCw, Lock, Sparkles, GitBranch } from 'lucide-react';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
 type Step = 'form' | 'analyzing' | 'done' | 'error' | 'exists';
+type RepoSource = 'picker' | 'manual';
+type PickerState = 'idle' | 'loading' | 'ready' | 'error';
 
 interface AnalysisProgress {
   step: string;
@@ -14,6 +16,21 @@ interface AnalysisProgress {
 interface ConnectRepoResponse {
   id?: string;
   error?: string;
+}
+
+interface GithubSessionMetadata {
+  provider?: string;
+}
+
+interface GithubRepo {
+  id: number;
+  full_name: string;
+  name: string;
+  description: string | null;
+  private: boolean;
+  html_url: string;
+  updated_at: string;
+  default_branch: string;
 }
 
 const PROGRESS_STEPS: AnalysisProgress[] = [
@@ -28,6 +45,44 @@ const PROGRESS_STEPS: AnalysisProgress[] = [
   { step: 'Analysis complete!',         pct: 100 },
 ];
 
+async function fetchGithubRepos(providerToken: string): Promise<GithubRepo[]> {
+  const repoMap = new Map<number, GithubRepo>();
+
+  for (let page = 1; page <= 3; page += 1) {
+    const res = await fetch(
+      `https://api.github.com/user/repos?sort=updated&per_page=100&page=${page}&affiliation=owner,collaborator,organization_member`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Bearer ${providerToken}`,
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      },
+    );
+
+    if (!res.ok) {
+      let message = `GitHub returned ${res.status}`;
+      try {
+        const payload = await res.json() as { message?: string };
+        if (payload.message) message = payload.message;
+      } catch {
+        // fall back to the generic status error
+      }
+      throw new Error(message);
+    }
+
+    const pageRepos = await res.json() as GithubRepo[];
+    pageRepos.forEach(repo => repoMap.set(repo.id, repo));
+    if (pageRepos.length < 100) break;
+  }
+
+  return Array.from(repoMap.values()).sort((a, b) => {
+    const aTime = new Date(a.updated_at).getTime();
+    const bTime = new Date(b.updated_at).getTime();
+    return bTime - aTime;
+  });
+}
+
 export default function ConnectPage() {
   const router = useRouter();
   const [step, setStep]       = useState<Step>('form');
@@ -38,12 +93,91 @@ export default function ConnectPage() {
   const [progressLabel, setProgressLabel] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [existingRepoId, setExistingRepoId] = useState('');
+  const [repoSource, setRepoSource] = useState<RepoSource>('manual');
+  const [pickerState, setPickerState] = useState<PickerState>('idle');
+  const [pickerError, setPickerError] = useState('');
+  const [githubProviderToken, setGithubProviderToken] = useState('');
+  const [githubRepos, setGithubRepos] = useState<GithubRepo[]>([]);
+  const [repoSearch, setRepoSearch] = useState('');
+  const [selectedRepoId, setSelectedRepoId] = useState<number | null>(null);
+  const deferredRepoSearch = useDeferredValue(repoSearch);
+
+  const filteredRepos = githubRepos.filter(repo => {
+    const query = deferredRepoSearch.trim().toLowerCase();
+    if (!query) return true;
+    return repo.full_name.toLowerCase().includes(query) || (repo.description ?? '').toLowerCase().includes(query);
+  });
+
+  const selectedRepo = githubRepos.find(repo => repo.id === selectedRepoId) ?? null;
+  const hasGithubPicker = githubProviderToken.length > 0;
 
   const handleSignOut = async () => {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
     router.replace('/landing');
   };
+
+  useEffect(() => {
+    let isActive = true;
+
+    const bootstrapSession = async () => {
+      const supabase = createBrowserSupabaseClient();
+      const { data } = await supabase.auth.getSession();
+      if (!isActive) return;
+
+      const provider = (data.session?.user.app_metadata as GithubSessionMetadata | undefined)?.provider;
+      const providerToken = provider === 'github' ? (data.session?.provider_token ?? '') : '';
+
+      setGithubProviderToken(providerToken);
+
+      if (providerToken) {
+        setGhToken(providerToken);
+        setRepoSource('picker');
+      } else {
+        setRepoSource('manual');
+      }
+    };
+
+    void bootstrapSession();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!githubProviderToken) return;
+
+    let isActive = true;
+
+    const loadGithubPicker = async () => {
+      setPickerState('loading');
+      setPickerError('');
+
+      try {
+        const repos = await fetchGithubRepos(githubProviderToken);
+        if (!isActive) return;
+
+        setGithubRepos(repos);
+        setPickerState('ready');
+
+        if (repos.length > 0) {
+          setSelectedRepoId(current => current && repos.some(repo => repo.id === current) ? current : repos[0].id);
+          setRepoUrl(current => current || `https://github.com/${repos[0].full_name}`);
+        }
+      } catch (error: unknown) {
+        if (!isActive) return;
+        setPickerState('error');
+        setPickerError(error instanceof Error ? error.message : 'Unable to load repos from GitHub');
+      }
+    };
+
+    void loadGithubPicker();
+
+    return () => {
+      isActive = false;
+    };
+  }, [githubProviderToken]);
 
   const runProgressAnimation = async () => {
     for (const p of PROGRESS_STEPS) {
@@ -53,8 +187,51 @@ export default function ConnectPage() {
     }
   };
 
+  const handleRefreshRepos = async () => {
+    if (!githubProviderToken) return;
+
+    setPickerState('loading');
+    setPickerError('');
+
+    try {
+      const repos = await fetchGithubRepos(githubProviderToken);
+      setGithubRepos(repos);
+      setPickerState('ready');
+
+      if (repos.length > 0) {
+        const nextRepo = selectedRepoId && repos.some(repo => repo.id === selectedRepoId)
+          ? repos.find(repo => repo.id === selectedRepoId) ?? repos[0]
+          : repos[0];
+
+        setSelectedRepoId(nextRepo.id);
+        setRepoUrl(`https://github.com/${nextRepo.full_name}`);
+      }
+    } catch (error: unknown) {
+      setPickerState('error');
+      setPickerError(error instanceof Error ? error.message : 'Unable to refresh repos from GitHub');
+    }
+  };
+
+  const handleRepoSelection = (repo: GithubRepo) => {
+    setSelectedRepoId(repo.id);
+    setRepoUrl(`https://github.com/${repo.full_name}`);
+    if (githubProviderToken) setGhToken(githubProviderToken);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+
+    if (!repoUrl) {
+      setErrorMsg('Select a repository before connecting.');
+      return;
+    }
+
+    if (!ghToken) {
+      setErrorMsg('A GitHub token is required to read the repo and register webhooks.');
+      return;
+    }
+
     setStep('analyzing');
     setProgress(0);
 
@@ -179,7 +356,7 @@ export default function ConnectPage() {
 
       {/* Card */}
       <div style={{
-        width: '100%', maxWidth: 480,
+        width: '100%', maxWidth: 980,
         background: 'var(--card)', border: '1px solid var(--border)',
         borderRadius: 16, overflow: 'hidden',
         boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
@@ -200,55 +377,387 @@ export default function ConnectPage() {
               Lingo Pulse will analyze your i18n files and track quality over time
             </p>
 
-            {/* GitHub repo */}
-            <Field
-              label="GitHub Repository"
-              icon={<Github size={14} />}
-              placeholder="github.com/your-org/your-repo"
-              value={repoUrl}
-              onChange={setRepoUrl}
-              required
-              hint="Public or private repo you have access to"
-            />
+            {hasGithubPicker && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRepoSource('picker');
+                    setGhToken(githubProviderToken);
+                    if (selectedRepo) {
+                      setRepoUrl(`https://github.com/${selectedRepo.full_name}`);
+                    } else if (githubRepos[0]) {
+                      setRepoUrl(`https://github.com/${githubRepos[0].full_name}`);
+                    }
+                    setErrorMsg('');
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    border: `1px solid ${repoSource === 'picker' ? 'var(--accent-glow)' : 'var(--border)'}`,
+                    background: repoSource === 'picker' ? 'var(--accent-dim)' : 'transparent',
+                    color: repoSource === 'picker' ? 'var(--accent)' : 'var(--text-2)',
+                    fontSize: 11,
+                    fontFamily: 'DM Mono, monospace',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Sparkles size={12} />
+                  Pick from GitHub
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRepoSource('manual');
+                    setErrorMsg('');
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    border: `1px solid ${repoSource === 'manual' ? 'var(--border-bright)' : 'var(--border)'}`,
+                    background: repoSource === 'manual' ? 'rgba(255,255,255,0.03)' : 'transparent',
+                    color: repoSource === 'manual' ? 'var(--text-1)' : 'var(--text-2)',
+                    fontSize: 11,
+                    fontFamily: 'DM Mono, monospace',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Paste manually
+                </button>
+              </div>
+            )}
 
-            {/* GitHub token */}
-            <Field
-              label="GitHub Personal Access Token"
-              icon={<Key size={14} />}
-              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-              value={ghToken}
-              onChange={setGhToken}
-              required
-              type="password"
-              hint={
-                <span>
-                  Needs <code style={{ background: 'var(--border)', padding: '1px 4px', borderRadius: 3, fontSize: 10 }}>repo</code> scope.{' '}
-                  <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer"
-                    style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                    Generate one <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
-                  </a>
-                </span>
-              }
-            />
+            {errorMsg && (
+              <div
+                style={{
+                  marginBottom: 18,
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(240,82,72,0.2)',
+                  background: 'rgba(240,82,72,0.08)',
+                  color: 'var(--danger)',
+                  fontSize: 12,
+                  fontFamily: 'DM Mono, monospace',
+                }}
+              >
+                {errorMsg}
+              </div>
+            )}
 
-            {/* Lingo API key */}
-            <Field
-              label="Lingo.dev API Key"
-              icon={<Zap size={14} />}
-              placeholder="lingo_xxxxxxxxxxxxxxxxxxxx"
-              value={lingoKey}
-              onChange={setLingoKey}
-              type="password"
-              hint={
-                <span>
-                  Optional — enables quality scoring.{' '}
-                  <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer"
-                    style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                    Get one free <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
-                  </a>
-                </span>
-              }
-            />
+            <div className="connect-form-grid">
+              <div>
+                {hasGithubPicker && repoSource === 'picker' ? (
+                  <>
+                    <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'DM Mono, monospace', marginBottom: 6 }}>
+                      GitHub repository picker
+                    </label>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: 'var(--surface)',
+                        borderRadius: 10,
+                        border: '1px solid var(--border)',
+                        padding: '0 12px',
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Search size={14} color="var(--text-3)" />
+                      <input
+                        type="text"
+                        placeholder="Search repos from your GitHub account"
+                        value={repoSearch}
+                        onChange={e => setRepoSearch(e.target.value)}
+                        style={{
+                          flex: 1,
+                          border: 'none',
+                          outline: 'none',
+                          background: 'transparent',
+                          color: 'var(--text-1)',
+                          fontFamily: 'DM Mono, monospace',
+                          fontSize: 12,
+                          padding: '11px 0',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleRefreshRepos()}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          color: 'var(--text-2)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title="Refresh repos"
+                      >
+                        <RefreshCw size={14} />
+                      </button>
+                    </div>
+
+                    <div
+                      style={{
+                        marginBottom: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                        {pickerState === 'loading'
+                          ? 'Loading repos from GitHub...'
+                          : `${filteredRepos.length} repos available from your GitHub session`}
+                      </div>
+                      <span className="tag tag-accent">OAuth-backed</span>
+                    </div>
+
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        border: '1px solid var(--border)',
+                        background: 'rgba(255,255,255,0.02)',
+                        maxHeight: 332,
+                        overflow: 'auto',
+                        padding: 8,
+                      }}
+                    >
+                      {pickerState === 'loading' && (
+                        <div style={{ display: 'grid', gap: 10 }}>
+                          {[0, 1, 2, 3].map(index => (
+                            <div key={index} className="skeleton" style={{ height: 64, borderRadius: 12 }} />
+                          ))}
+                        </div>
+                      )}
+
+                      {pickerState === 'error' && (
+                        <div
+                          style={{
+                            borderRadius: 12,
+                            border: '1px solid rgba(240,82,72,0.2)',
+                            background: 'rgba(240,82,72,0.08)',
+                            padding: '14px 16px',
+                            color: 'var(--danger)',
+                            fontSize: 12,
+                            fontFamily: 'DM Mono, monospace',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {pickerError}
+                          <div style={{ marginTop: 8, color: 'var(--text-3)' }}>
+                            If you just enabled new GitHub scopes, sign out and sign in again once to refresh consent.
+                          </div>
+                        </div>
+                      )}
+
+                      {pickerState === 'ready' && filteredRepos.length === 0 && (
+                        <div
+                          style={{
+                            borderRadius: 12,
+                            border: '1px dashed var(--border)',
+                            padding: '18px 16px',
+                            color: 'var(--text-2)',
+                            fontSize: 12,
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {githubRepos.length === 0
+                            ? 'No repositories were returned for this GitHub account. Use manual entry if you need a repo from another account.'
+                            : 'No repositories match that search.'}
+                        </div>
+                      )}
+
+                      {pickerState === 'ready' && filteredRepos.length > 0 && (
+                        <div style={{ display: 'grid', gap: 8 }}>
+                          {filteredRepos.map(repo => {
+                            const isSelected = repo.id === selectedRepoId;
+                            return (
+                              <button
+                                key={repo.id}
+                                type="button"
+                                onClick={() => handleRepoSelection(repo)}
+                                style={{
+                                  textAlign: 'left',
+                                  borderRadius: 12,
+                                  border: `1px solid ${isSelected ? 'var(--accent-glow)' : 'var(--border)'}`,
+                                  background: isSelected ? 'rgba(0,229,160,0.09)' : 'rgba(255,255,255,0.02)',
+                                  padding: '12px 14px',
+                                  cursor: 'pointer',
+                                  transition: 'border-color 0.15s, transform 0.15s',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
+                                  <div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', marginBottom: 4 }}>
+                                      {repo.full_name}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                                      {repo.description || 'No description provided'}
+                                    </div>
+                                  </div>
+                                  <span className={repo.private ? 'tag tag-warning' : 'tag tag-neutral'}>
+                                    {repo.private ? 'private' : 'public'}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                                  <span>{repo.default_branch}</span>
+                                  <span>updated {new Date(repo.updated_at).toLocaleDateString()}</span>
+                                  {isSelected && <span style={{ color: 'var(--accent)' }}>selected</span>}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Field
+                      label="GitHub Repository"
+                      icon={<Github size={14} />}
+                      placeholder="github.com/your-org/your-repo"
+                      value={repoUrl}
+                      onChange={setRepoUrl}
+                      required
+                      hint="Public or private repo you have access to"
+                    />
+
+                    <Field
+                      label="GitHub Personal Access Token"
+                      icon={<Key size={14} />}
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                      value={ghToken}
+                      onChange={setGhToken}
+                      required
+                      type="password"
+                      hint={
+                        <span>
+                          Needs <code style={{ background: 'var(--border)', padding: '1px 4px', borderRadius: 3, fontSize: 10 }}>repo</code> scope.{' '}
+                          <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer"
+                            style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                            Generate one <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                          </a>
+                        </span>
+                      }
+                    />
+                  </>
+                )}
+              </div>
+
+              <div className="connect-side-stack">
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.03)',
+                    padding: '16px 16px 14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        background: hasGithubPicker && repoSource === 'picker'
+                          ? 'rgba(0,229,160,0.12)'
+                          : 'rgba(75,158,255,0.12)',
+                        color: hasGithubPicker && repoSource === 'picker' ? 'var(--accent)' : 'var(--blue)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {hasGithubPicker && repoSource === 'picker' ? <Github size={15} /> : <Lock size={15} />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600 }}>
+                        {hasGithubPicker && repoSource === 'picker' ? 'Selected repo' : 'Access model'}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                        {hasGithubPicker && repoSource === 'picker' ? 'Using your signed-in GitHub session' : 'Manual GitHub token mode'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {hasGithubPicker && repoSource === 'picker' && selectedRepo ? (
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>{selectedRepo.full_name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
+                        {selectedRepo.description || 'This repo is ready to connect and scan.'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <span className={selectedRepo.private ? 'tag tag-warning' : 'tag tag-neutral'}>
+                          {selectedRepo.private ? 'private repo' : 'public repo'}
+                        </span>
+                        <span className="tag tag-neutral">
+                          <GitBranch size={10} />
+                          {selectedRepo.default_branch}
+                        </span>
+                      </div>
+                      <a
+                        href={selectedRepo.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'DM Mono, monospace' }}
+                      >
+                        Open on GitHub <ExternalLink size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                      </a>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.7 }}>
+                      {hasGithubPicker
+                        ? 'Switch to manual mode if you want to connect a repo from another GitHub account or use a different token.'
+                        : 'Paste a repo URL and token to connect a public or private repository you can access.'}
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.03)',
+                    padding: '16px 16px 14px',
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8 }}>
+                    token usage
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7 }}>
+                    {hasGithubPicker && repoSource === 'picker'
+                      ? 'Your current GitHub OAuth session is used for repo discovery and the initial connect request.'
+                      : 'The GitHub token is used to read repo contents and attempt webhook registration.'}
+                  </div>
+                </div>
+
+                <Field
+                  label="Lingo.dev API Key"
+                  icon={<Zap size={14} />}
+                  placeholder="lingo_xxxxxxxxxxxxxxxxxxxx"
+                  value={lingoKey}
+                  onChange={setLingoKey}
+                  type="password"
+                  hint={
+                    <span>
+                      Optional — enables quality scoring.{' '}
+                      <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer"
+                        style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                        Get one free <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                      </a>
+                    </span>
+                  }
+                />
+              </div>
+            </div>
 
             <button type="submit" style={{
               width: '100%', padding: '12px', marginTop: 8,
@@ -261,7 +770,7 @@ export default function ConnectPage() {
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1';    e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              Connect & Analyze <ArrowRight size={14} />
+              {repoSource === 'picker' ? 'Connect Selected Repo' : 'Connect & Analyze'} <ArrowRight size={14} />
             </button>
           </form>
         )}

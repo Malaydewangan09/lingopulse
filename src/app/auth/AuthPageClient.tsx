@@ -39,7 +39,10 @@ export default function AuthPageClient({ nextPath, initialError = '' }: Props) {
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo },
+        options: {
+          redirectTo,
+          scopes: provider === 'github' ? 'read:user user:email repo read:org' : undefined,
+        },
       });
 
       if (authError) throw authError;

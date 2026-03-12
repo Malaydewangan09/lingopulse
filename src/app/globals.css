@@ -156,6 +156,153 @@ body::after {
   gap: 14px;
 }
 
+.landing-feature-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.24fr) minmax(320px, 0.86fr);
+  gap: 20px;
+}
+
+.landing-feature-side-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.landing-feature-panel-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.72fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.landing-feature-micro-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.landing-surface-row {
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 180px);
+}
+
+.connect-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(240px, 0.82fr);
+  gap: 18px;
+}
+
+.connect-side-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.landing-process-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(0,229,160,0.14);
+  background: linear-gradient(180deg, rgba(8,15,27,0.98) 0%, rgba(10,17,31,0.96) 100%);
+  box-shadow: 0 42px 120px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.landing-process-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.landing-process-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(0,229,160,0.14), transparent 30%),
+    radial-gradient(circle at 84% 22%, rgba(75,158,255,0.12), transparent 28%),
+    radial-gradient(circle at 66% 84%, rgba(255,107,53,0.08), transparent 32%);
+  pointer-events: none;
+}
+
+.landing-process-inner {
+  position: relative;
+  z-index: 1;
+  padding: 28px;
+}
+
+.landing-process-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-process-row {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1.08fr) minmax(240px, 0.92fr);
+  gap: 24px;
+  align-items: start;
+  padding: 26px 0;
+}
+
+.landing-process-row + .landing-process-row {
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.landing-process-index-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  gap: 12px;
+}
+
+.landing-process-index {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 0 0 8px rgba(7,11,20,0.55);
+}
+
+.landing-process-segment {
+  position: relative;
+  flex: 1;
+  width: 1px;
+  min-height: 92px;
+  background: linear-gradient(180deg, rgba(0,229,160,0.18), rgba(122,143,160,0.08));
+  overflow: hidden;
+}
+
+.landing-process-segment::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px rgba(0,229,160,0.5);
+  transform: translateX(-50%);
+  animation: processPulseDown 3.8s ease-in-out infinite;
+}
+
+.landing-process-copy {
+  padding-top: 6px;
+}
+
+.landing-process-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.025);
+  padding: 16px;
+  min-height: 100%;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -230,6 +377,20 @@ body::after {
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+@keyframes scanSweep {
+  0%   { transform: translateX(-135%); }
+  100% { transform: translateX(235%); }
+}
+@keyframes marqueeShift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes processPulseDown {
+  0%   { transform: translate(-50%, 0); opacity: 0; }
+  18%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { transform: translate(-50%, calc(100% - 7px)); opacity: 0; }
+}
 
 @layer utilities {
   .font-mono { font-family: 'DM Mono', monospace; font-variant-numeric: tabular-nums; }
@@ -244,6 +405,7 @@ body::after {
   .animate-slide-right  { animation: slideInRight 0.5s cubic-bezier(0.16,1,0.3,1) both; }
   .animate-scale-in     { animation: scaleIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
   .animate-border-glow  { animation: borderGlow 2.5s ease-in-out infinite; }
+  .animate-scan-sweep   { animation: scanSweep 5.8s ease-in-out infinite; }
 
   /* Intersection-observer driven: add .is-visible to trigger */
   .reveal {
@@ -275,9 +437,24 @@ body::after {
   }
 
   .tag {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 2px 8px; border-radius: 100px;
-    font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    padding: 4px 9px;
+    border-radius: 10px;
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     border: 1px solid;
   }
   .tag-success { background: rgba(63,200,122,0.1);  color: var(--success); border-color: rgba(63,200,122,0.25); }
@@ -310,14 +487,57 @@ body::after {
 }
 
 @media (max-width: 1100px) {
+  .landing-feature-grid,
+  .landing-feature-panel-top,
+  .connect-form-grid,
   .dashboard-metrics-grid,
   .dashboard-top-grid,
   .dashboard-bottom-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .landing-process-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .landing-process-preview {
+    grid-column: 2 / -1;
+  }
 }
 
 @media (max-width: 780px) {
+  .landing-feature-grid,
+  .landing-feature-panel-top,
+  .connect-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-surface-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-process-inner {
+    padding: 22px 18px;
+  }
+
+  .landing-process-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .landing-process-index-wrap {
+    align-items: flex-start;
+  }
+
+  .landing-process-segment {
+    display: none;
+  }
+
+  .landing-process-copy,
+  .landing-process-preview {
+    padding-top: 0;
+  }
+
   .dashboard-main {
     padding: 20px 16px 36px;
   }
