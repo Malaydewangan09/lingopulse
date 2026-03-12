@@ -78,6 +78,17 @@ const RELEASE_SURFACE = [
   { module: 'onboarding', detail: 'es + fr stable', coverage: 92, state: 'healthy', tone: 'var(--accent)' },
 ];
 
+const REPO_PATTERNS = [
+  'package/section/en.json',
+  'translations/fr.json',
+  'locale-per-file',
+  'nested packages',
+  'wrapped locale JSON',
+  'module folders',
+  'monorepos',
+  'GitHub repo sync',
+];
+
 const STEPS = [
   {
     num: '01',
@@ -470,6 +481,28 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+      </RevealSection>
+
+      {/* ── Compatibility strip ── */}
+      <RevealSection delay="0.06s">
+        <section style={{ padding: `18px ${LANDING_GUTTER} 0`, overflow: 'hidden' }}>
+          <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-3)', marginBottom: 14, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Scans common repository i18n layouts
+            </div>
+          </div>
+
+          <div className="landing-compat-band">
+            <div className="landing-compat-track">
+              {[...REPO_PATTERNS, ...REPO_PATTERNS].map((pattern, index) => (
+                <div key={`${pattern}-${index}`} className="landing-compat-item">
+                  <span className="landing-compat-dot" />
+                  <span>{pattern}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </RevealSection>
