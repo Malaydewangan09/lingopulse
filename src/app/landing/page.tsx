@@ -244,15 +244,15 @@ export default function LandingPage() {
           <button
             onClick={() => router.push('/auth')}
             style={{
-              padding: '7px 18px', borderRadius: 7,
-              background: 'var(--accent)', border: 'none',
-              color: '#070B14', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              height: 40, padding: '0 20px', borderRadius: 10,
+              background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
+              color: 'var(--accent-button-text)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
               fontFamily: 'var(--font-sans)',
-              transition: 'opacity 0.15s, transform 0.15s',
-              boxShadow: '0 0 20px rgba(0,229,160,0.2)',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
             }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1';    e.currentTarget.style.transform = 'translateY(0)'; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
           >
             Start monitoring
           </button>
@@ -317,14 +317,14 @@ export default function LandingPage() {
             onClick={() => router.push('/auth')}
             style={{
               padding: '14px 32px', borderRadius: 10,
-              background: 'var(--accent)', border: 'none',
-              color: '#070B14', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
+              color: 'var(--accent-button-text)', fontSize: 15, fontWeight: 700, cursor: 'pointer',
               fontFamily: 'var(--font-sans)',
-              boxShadow: '0 0 40px rgba(0,229,160,0.3)',
-              transition: 'opacity 0.15s, transform 0.15s, box-shadow 0.15s',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
+              transition: 'transform 0.15s, box-shadow 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(0,229,160,0.4)'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(0,229,160,0.3)'; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
           >
             Connect repository
           </button>
@@ -997,14 +997,14 @@ export default function LandingPage() {
                 onClick={() => router.push('/auth')}
                 style={{
                   padding: '14px 40px', borderRadius: 10,
-                  background: 'var(--accent)', border: 'none',
-                  color: '#070B14', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                  background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
+                  color: 'var(--accent-button-text)', fontSize: 15, fontWeight: 700, cursor: 'pointer',
                   fontFamily: 'var(--font-sans)',
-                  boxShadow: '0 0 40px rgba(0,229,160,0.25)',
-                  transition: 'opacity 0.15s, transform 0.15s, box-shadow 0.15s',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(0,229,160,0.4)'; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(0,229,160,0.25)'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
               >
                 Start monitoring
               </button>
@@ -1033,14 +1033,14 @@ export default function LandingPage() {
                 onClick={() => router.push('/auth')}
                 style={{
                   padding: '13px 32px', borderRadius: 10,
-                  background: 'var(--accent)', border: 'none',
-                  color: '#070B14', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
+                  color: 'var(--accent-button-text)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
                   fontFamily: 'var(--font-sans)',
-                  transition: 'opacity 0.15s, transform 0.15s',
-                  boxShadow: '0 0 32px rgba(0,229,160,0.3)',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
               >
                 Connect repository
               </button>

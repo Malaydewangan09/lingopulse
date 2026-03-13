@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  if (!repoUrl || !githubToken) {
-    return NextResponse.json({ error: 'repoUrl and githubToken are required' }, { status: 400 });
+  if (!repoUrl || !githubToken || !lingoApiKey?.trim()) {
+    return NextResponse.json({ error: 'repoUrl, githubToken, and lingoApiKey are required' }, { status: 400 });
   }
 
   // Parse "owner/repo" or full GitHub URL
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     owner_user_id:  user.id,
     default_branch: repoInfo.default_branch ?? 'main',
     github_token:   githubToken,
-    lingo_api_key:  lingoApiKey ?? null,
+    lingo_api_key:  lingoApiKey.trim(),
     webhook_id:     webhookId,
     webhook_secret: sharedWebhookSecret,
   }).select().single();
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
 
   // Trigger initial analysis in the background
-  analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey ?? null, 'manual', db)
+  analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey.trim(), 'manual', db)
     .catch(console.error);
 
   return NextResponse.json({ id: repo.id, fullName, webhookRegistered: !!webhookId }, { status: 201 });

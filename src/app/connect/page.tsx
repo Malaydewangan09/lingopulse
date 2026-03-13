@@ -233,6 +233,11 @@ export default function ConnectPage() {
       return;
     }
 
+    if (!lingoKey.trim()) {
+      setErrorMsg('A Lingo.dev API key is required to score translations and generate draft fix PRs.');
+      return;
+    }
+
     setStep('analyzing');
     setProgress(0);
 
@@ -646,6 +651,25 @@ export default function ConnectPage() {
                     />
                   </>
                 )}
+
+                <Field
+                  label="Lingo.dev API Key"
+                  icon={<Zap size={14} />}
+                  placeholder="lingo_xxxxxxxxxxxxxxxxxxxx"
+                  value={lingoKey}
+                  onChange={setLingoKey}
+                  required
+                  type="password"
+                  hint={
+                    <span>
+                      Required - powers translation quality scoring and draft translation fixes.{' '}
+                      <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer"
+                        style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                        Get one free <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                      </a>
+                    </span>
+                  }
+                />
               </div>
 
               <div className="connect-side-stack">
@@ -654,7 +678,7 @@ export default function ConnectPage() {
                     borderRadius: 14,
                     border: '1px solid var(--border)',
                     background: 'var(--surface)',
-                    padding: '16px 16px 14px',
+                    padding: '19px 16px 14px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -734,39 +758,22 @@ export default function ConnectPage() {
                       : 'The GitHub token is used to read repo contents and attempt webhook registration.'}
                   </div>
                 </div>
-
-                <Field
-                  label="Lingo.dev API Key"
-                  icon={<Zap size={14} />}
-                  placeholder="lingo_xxxxxxxxxxxxxxxxxxxx"
-                  value={lingoKey}
-                  onChange={setLingoKey}
-                  type="password"
-                  hint={
-                    <span>
-                      Optional — enables quality scoring.{' '}
-                      <a href="https://lingo.dev" target="_blank" rel="noopener noreferrer"
-                        style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                        Get one free <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
-                      </a>
-                    </span>
-                  }
-                />
               </div>
             </div>
 
             <button type="submit" style={{
-              width: '100%', padding: '12px', marginTop: 8,
-              background: 'var(--accent)', border: 'none', borderRadius: 9,
-              color: '#0a1220', fontFamily: 'var(--font-sans)',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              width: 'fit-content', minWidth: 356, maxWidth: '100%', padding: '10px 18px', marginTop: 26, marginInline: 'auto',
+              background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 9,
+              color: 'var(--accent-button-text)', fontFamily: 'var(--font-sans)',
+              fontSize: 12.5, fontWeight: 650, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              transition: 'opacity 0.15s, transform 0.15s',
+              transition: 'transform 0.15s, box-shadow 0.15s',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
             }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1';    e.currentTarget.style.transform = 'translateY(0)'; }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 22px rgba(0,0,0,0.18)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
             >
-              {repoSource === 'picker' ? 'Connect Selected Repo' : 'Connect & Analyze'} <ArrowRight size={14} />
+              {repoSource === 'picker' ? 'Connect Selected Repo' : 'Connect & Analyze'} <ArrowRight size={11} />
             </button>
           </form>
         )}
@@ -851,11 +858,12 @@ export default function ConnectPage() {
             }}>
               This repo is already connected. You can view its dashboard or force a fresh reconnect (deletes existing data and re-scans).
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
               {existingRepoId && (
                 <button onClick={() => router.push(`/repo/${existingRepoId}`)} style={{
-                  width: '100%', padding: '10px', background: 'var(--accent)', border: 'none', borderRadius: 8,
-                  color: '#0a1220', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  width: 'fit-content', minWidth: 248, maxWidth: '100%', padding: '10px 18px', background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 8,
+                  color: 'var(--accent-button-text)', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
                 }}>
                   Go to dashboard →
                 </button>
@@ -866,7 +874,7 @@ export default function ConnectPage() {
                 }
                 setStep('form');
               }} style={{
-                width: '100%', padding: '10px', background: 'transparent',
+                width: 'fit-content', minWidth: 248, maxWidth: '100%', padding: '10px 18px', background: 'transparent',
                 border: '1px solid var(--border)', borderRadius: 8,
                 color: 'var(--text-2)', fontFamily: 'var(--font-sans)',
                 fontSize: 12, cursor: 'pointer',
@@ -922,6 +930,7 @@ function Field({ label, icon, placeholder, value, onChange, required, type = 'te
     <div style={{ marginBottom: 18 }}>
       <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', fontWeight: 500, marginBottom: 6 }}>
         {label}
+        {required && <span style={{ color: 'var(--accent)', marginLeft: 4 }}>*</span>}
       </label>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,

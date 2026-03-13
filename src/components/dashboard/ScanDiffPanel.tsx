@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, GitPullRequest, LoaderCircle, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react';
 import SectionHeader from '@/components/dashboard/SectionHeader';
 import type { DraftFixResult, ScanDiffSignal, ScanDiffSummary } from '@/lib/types';
@@ -112,6 +113,11 @@ function SignalList({
 }
 
 export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixResult, latestDraftFix, fixError }: Props) {
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastEntered, setToastEntered] = useState(false);
+  const previousFixUrlRef = useRef<string | null>(null);
+  const hideToastRef = useRef<number | null>(null);
+  const removeToastRef = useRef<number | null>(null);
   const activeDiff = diff ?? {
     hasBaseline: false,
     status: 'watch',
@@ -130,8 +136,54 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
   const visibleDraftFix = fixResult ?? latestDraftFix;
   const showComparison = activeDiff.hasBaseline;
 
+  useEffect(() => {
+    return () => {
+      if (hideToastRef.current) window.clearTimeout(hideToastRef.current);
+      if (removeToastRef.current) window.clearTimeout(removeToastRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fixResult?.prUrl || fixResult.prUrl === previousFixUrlRef.current) return;
+
+    previousFixUrlRef.current = fixResult.prUrl;
+
+    if (hideToastRef.current) window.clearTimeout(hideToastRef.current);
+    if (removeToastRef.current) window.clearTimeout(removeToastRef.current);
+
+    let frame = 0;
+    const showTimer = window.setTimeout(() => {
+      setShowSuccessToast(true);
+      setToastEntered(false);
+
+      frame = window.requestAnimationFrame(() => setToastEntered(true));
+
+      hideToastRef.current = window.setTimeout(() => {
+        setToastEntered(false);
+      }, 3200);
+
+      removeToastRef.current = window.setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3460);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(showTimer);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [fixResult]);
+
   return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+    <div
+      style={{
+        position: 'relative',
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 14,
+      }}
+    >
       <SectionHeader
         title="Scan Diff"
         subtitle={activeDiff.hasBaseline ? 'latest run compared with the previous scan' : 'first baseline captured for this repo'}
@@ -173,6 +225,40 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
           </div>
         }
       />
+
+      {showSuccessToast && fixResult && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 74,
+            right: 18,
+            zIndex: 4,
+            width: 'min(340px, calc(100% - 36px))',
+            borderRadius: 12,
+            border: '1px solid rgba(0,229,160,0.2)',
+            background: 'var(--surface)',
+            boxShadow: '0 18px 40px rgba(0, 0, 0, 0.28)',
+            padding: 14,
+            display: 'grid',
+            gap: 8,
+            opacity: toastEntered ? 1 : 0,
+            transform: toastEntered ? 'translateY(0)' : 'translateY(-8px)',
+            transition: 'opacity 180ms ease, transform 180ms ease',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--success)', fontSize: 12, fontWeight: 600 }}>
+            <CheckCircle2 size={14} />
+            Draft fix PR created
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+            {fixResult.keysFilled} keys drafted across {fixResult.filesUpdated} files.
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+            {fixResult.mode === 'lingo' ? 'Lingo.dev draft ready on GitHub.' : 'Source-copy fallback draft ready on GitHub.'}
+          </div>
+        </div>
+      )}
 
       <div style={{ padding: 18, display: 'grid', gap: 16 }}>
         <div
@@ -277,8 +363,8 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
           <div
             style={{
               borderRadius: 12,
-              border: `1px solid ${fixError ? 'rgba(240,82,72,0.22)' : 'rgba(0,229,160,0.18)'}`,
-              background: fixError ? 'rgba(240,82,72,0.06)' : 'rgba(0,229,160,0.06)',
+              border: `1px solid ${fixError ? 'rgba(240,82,72,0.18)' : 'var(--border)'}`,
+              background: fixError ? 'rgba(240,82,72,0.05)' : 'var(--surface)',
               padding: 14,
               display: 'flex',
               alignItems: 'center',
@@ -289,7 +375,7 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
           >
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, color: fixError ? 'var(--danger)' : 'var(--text-1)', fontWeight: 600, marginBottom: 4 }}>
-                {fixError ? 'Draft fix PR failed' : 'Draft fix PR opened'}
+                {fixError ? 'Draft fix PR failed' : 'Latest draft fix PR'}
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
                 {fixError
@@ -311,6 +397,10 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
                   textDecoration: 'none',
                   fontFamily: 'DM Mono, monospace',
                   fontSize: 11,
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '8px 10px',
+                  background: 'var(--card-hover)',
                 }}
               >
                 <Sparkles size={13} />
