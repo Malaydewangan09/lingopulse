@@ -600,7 +600,7 @@ export default function LandingPage() {
             Connect repository
           </button>
           <button
-            onClick={() => router.push('/connect')}
+            onClick={() => router.push('/docs')}
             style={{
               padding: '14px 28px', borderRadius: 10,
               background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-bright)',
@@ -611,7 +611,7 @@ export default function LandingPage() {
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
           >
-            Open demo
+            Read the docs
           </button>
         </div>
 
@@ -1117,7 +1117,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section style={{ borderTop: '1px solid var(--border)', padding: LANDING_WIDE_SECTION_PADDING }}>
+      <section id="how-it-works" style={{ borderTop: '1px solid var(--border)', padding: LANDING_WIDE_SECTION_PADDING }}>
         <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
           <RevealSection blur>
             <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.03em', textAlign: 'center', marginBottom: 12 }}>
@@ -1319,18 +1319,18 @@ export default function LandingPage() {
                 Connect repository
               </button>
               <button
-                onClick={() => router.push('/connect')}
+                onClick={() => router.push('/docs')}
                 style={{
                   padding: '13px 28px', borderRadius: 10,
                   background: 'transparent', border: '1px solid var(--border-bright)',
                   color: 'var(--text-1)', fontSize: 14, cursor: 'pointer',
                   fontFamily: 'var(--font-sans)',
-                  transition: 'background 0.15s',
+                  transition: 'background 0.15s, border-color 0.15s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
               >
-                Open demo
+                Read the docs
               </button>
             </div>
           </div>
