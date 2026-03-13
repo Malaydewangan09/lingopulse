@@ -374,7 +374,6 @@ const label = t('checkout.pay_now');`;
                   <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 4 }}>status</span>
                   {([
                     { label: 'connected', done: true },
-                    { label: 'webhook', done: !!data.repo.webhook_id, localOnly: !data.repo.webhook_id && origin.includes('localhost') },
                     { label: 'ingest key', done: !!data.repo.public_ingest_key },
                     { label: 'first incident', done: data.incidents.length > 0 },
                   ] as { label: string; done: boolean; localOnly?: boolean }[]).map(step => (
@@ -390,7 +389,7 @@ const label = t('checkout.pay_now');`;
                         ? <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         : <div style={{ width: 5, height: 5, borderRadius: '50%', background: step.localOnly ? 'var(--warning)' : 'var(--border-bright)', flexShrink: 0 }} />
                       }
-                      {step.localOnly ? 'webhook (needs deploy)' : step.label}
+                      {step.label}
                     </span>
                   ))}
                 </div>

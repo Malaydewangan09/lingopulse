@@ -436,6 +436,13 @@ export default function LandingPage() {
   const router = useRouter();
   const dark = useIsDark();
   const heroGlowRef = useRef<HTMLDivElement>(null);
+  const [ctaLoading, setCtaLoading] = useState(false);
+
+  const goToAuth = () => {
+    if (ctaLoading) return;
+    setCtaLoading(true);
+    router.push('/auth');
+  };
 
   return (
     <div style={{
@@ -471,18 +478,28 @@ export default function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ThemeToggle />
           <button
-            onClick={() => router.push('/auth')}
+            onClick={goToAuth}
+            disabled={ctaLoading}
             style={{
               height: 40, padding: '0 20px', borderRadius: 10,
               background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
-              color: 'var(--accent-button-text)', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              color: 'var(--accent-button-text)', fontSize: 13, fontWeight: 700,
+              cursor: ctaLoading ? 'default' : 'pointer',
               fontFamily: 'var(--font-sans)',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              display: 'flex', alignItems: 'center', gap: 7,
+              opacity: ctaLoading ? 0.75 : 1,
+              transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
               boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
             }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
           >
+            {ctaLoading && (
+              <svg width="13" height="13" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}>
+                <circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3"/>
+                <path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            )}
             Start monitoring
           </button>
         </div>
@@ -558,22 +575,32 @@ export default function LandingPage() {
           marginBottom: 72, animationDelay: '0.24s',
         }}>
           <button
-            onClick={() => router.push('/auth')}
+            onClick={goToAuth}
+            disabled={ctaLoading}
             style={{
               padding: '14px 32px', borderRadius: 10,
               background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
-              color: 'var(--accent-button-text)', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              color: 'var(--accent-button-text)', fontSize: 15, fontWeight: 700,
+              cursor: ctaLoading ? 'default' : 'pointer',
               fontFamily: 'var(--font-sans)',
               boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
-              transition: 'transform 0.15s, box-shadow 0.15s',
+              transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
+              opacity: ctaLoading ? 0.75 : 1,
+              display: 'flex', alignItems: 'center', gap: 8,
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}
+            onMouseEnter={e => { if (!ctaLoading) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
           >
+            {ctaLoading && (
+              <svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}>
+                <circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3"/>
+                <path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            )}
             Connect repository
           </button>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/connect')}
             style={{
               padding: '14px 28px', borderRadius: 10,
               background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-bright)',
@@ -1238,7 +1265,7 @@ export default function LandingPage() {
           <RevealSection delay="0.3s">
             <div style={{ textAlign: 'center', marginTop: 60 }}>
               <button
-                onClick={() => router.push('/auth')}
+                onClick={goToAuth}
                 style={{
                   padding: '14px 40px', borderRadius: 10,
                   background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
@@ -1277,7 +1304,7 @@ export default function LandingPage() {
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
-                onClick={() => router.push('/auth')}
+                onClick={goToAuth}
                 style={{
                   padding: '13px 32px', borderRadius: 10,
                   background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
@@ -1292,7 +1319,7 @@ export default function LandingPage() {
                 Connect repository
               </button>
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/connect')}
                 style={{
                   padding: '13px 28px', borderRadius: 10,
                   background: 'transparent', border: '1px solid var(--border-bright)',

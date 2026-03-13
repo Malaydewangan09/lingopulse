@@ -10,16 +10,20 @@ export default async function Home() {
     return <LandingPage />;
   }
 
-  const db = supabaseAdmin();
-  const { data: repos } = await db
-    .from('repos')
-    .select('id')
-    .eq('owner_user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1);
+  try {
+    const db = supabaseAdmin();
+    const { data: repos } = await db
+      .from('repos')
+      .select('id')
+      .eq('owner_user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-  if (repos && repos.length > 0) {
-    redirect(`/repo/${repos[0].id}`);
+    if (repos && repos.length > 0) {
+      redirect(`/repo/${repos[0].id}`);
+    }
+  } catch {
+    // Supabase not configured — fall through to connect
   }
 
   redirect('/connect');
