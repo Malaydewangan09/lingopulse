@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { CheckCircle2, Copy, Link2, RadioTower, ShieldAlert, TerminalSquare } from 'lucide-react';
+// RadioTower still used in MetricCard, ShieldAlert/TerminalSquare in metrics
 import Header from '@/components/dashboard/Header';
 import MetricCard from '@/components/dashboard/MetricCard';
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -128,23 +129,7 @@ function SnippetBlock({
 
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600 }}>{activeSnippet.title}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-sans)', marginTop: 2 }}>
-            {activeSnippet.description}
-          </div>
-        </div>
-        <button
-          onClick={() => void handleCopy()}
-          className="mono-badge mono-badge-sm"
-          style={{ cursor: 'pointer', color: copied ? 'var(--success)' : 'var(--text-2)', border: '1px solid var(--border)', background: 'var(--surface)' }}
-        >
-          {copied ? <CheckCircle2 size={12} /> : <Copy size={12} />}
-          {copied ? 'copied' : 'copy'}
-        </button>
-      </div>
-      <div style={{ padding: '12px 16px 0', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
         {tabs.map(tab => {
           const active = tab.id === activeTab;
           return (
@@ -152,22 +137,26 @@ function SnippetBlock({
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               style={{
-                height: 32,
-                padding: '0 12px',
-                borderRadius: 8,
-                border: `1px solid ${active ? 'var(--border-bright)' : 'var(--border)'}`,
-                background: active ? 'var(--card-hover)' : 'var(--surface)',
-                color: active ? 'var(--text-1)' : 'var(--text-2)',
-                fontSize: 11,
-                fontWeight: active ? 600 : 500,
-                fontFamily: 'var(--font-sans)',
-                cursor: 'pointer',
+                height: 28, padding: '0 10px', borderRadius: 7,
+                border: `1px solid ${active ? 'var(--border-bright)' : 'transparent'}`,
+                background: active ? 'var(--card-hover)' : 'transparent',
+                color: active ? 'var(--text-1)' : 'var(--text-3)',
+                fontSize: 11, fontWeight: active ? 600 : 400,
+                fontFamily: 'var(--font-sans)', cursor: 'pointer',
               }}
             >
               {tab.label}
             </button>
           );
         })}
+        <button
+          onClick={() => void handleCopy()}
+          className="mono-badge mono-badge-sm"
+          style={{ marginLeft: 'auto', cursor: 'pointer', color: copied ? 'var(--success)' : 'var(--text-2)', border: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}
+        >
+          {copied ? <CheckCircle2 size={11} /> : <Copy size={11} />}
+          {copied ? 'copied' : 'copy'}
+        </button>
       </div>
       <pre style={{
         margin: 0,
@@ -180,6 +169,50 @@ function SnippetBlock({
         lineHeight: 1.7,
       }}>
         <code>{activeSnippet.code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function EnvConfigBlock({ repoId, ingestKey, apiBase }: { repoId: string; ingestKey: string; apiBase: string }) {
+  const [copied, setCopied] = useState(false);
+  const text = `LINGO_REPO_ID="${repoId}"\nLINGO_INGEST_KEY="${ingestKey}"\nLINGO_API_BASE="${apiBase}"`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          env config
+        </span>
+        <button
+          onClick={() => void handleCopy()}
+          className="mono-badge mono-badge-sm"
+          style={{ cursor: 'pointer', color: copied ? 'var(--success)' : 'var(--text-2)', border: '1px solid var(--border)', background: 'var(--surface)' }}
+        >
+          {copied ? <CheckCircle2 size={11} /> : <Copy size={11} />}
+          {copied ? 'copied' : 'copy all'}
+        </button>
+      </div>
+      <pre style={{ margin: 0, padding: '14px 16px', background: 'var(--surface)', fontSize: 11, fontFamily: 'var(--font-mono)', lineHeight: 1.8, color: 'var(--text-2)' }}>
+        {[
+          { key: 'LINGO_REPO_ID', val: repoId },
+          { key: 'LINGO_INGEST_KEY', val: ingestKey },
+          { key: 'LINGO_API_BASE', val: apiBase },
+        ].map(({ key, val }) => (
+          <div key={key}>
+            <span style={{ color: 'var(--accent)' }}>{key}</span>
+            <span style={{ color: 'var(--text-3)' }}>{"="}</span>
+            <span style={{ color: 'var(--text-1)' }}>{`"${val}"`}</span>
+          </div>
+        ))}
       </pre>
     </div>
   );
@@ -322,61 +355,67 @@ const label = t('checkout.pay_now');`;
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)', gap: 16, alignItems: 'start' }}>
               <div style={{ display: 'grid', gap: 14, minWidth: 0 }}>
-                <div style={{ borderRadius: 14, border: '1px solid var(--border)', background: 'var(--card)', padding: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <RadioTower size={16} color="var(--accent)" />
-                    <div style={{ fontSize: 18, color: 'var(--text-1)', fontWeight: 600 }}>
-                      Production Incident SDK
-                    </div>
-                  </div>
-                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, maxWidth: 760 }}>
-                    Install the SDK, trigger one runtime incident, and confirm that Lingo Pulse captures it against this repo. This page is for setup and validation, not just copy-paste docs.
-                  </p>
-                </div>
-
                 <SnippetBlock
                   tabs={[...snippetTabs]}
                   activeTab={activeSnippet}
                   onTabChange={setActiveSnippet}
                 />
 
-                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                  <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600, marginBottom: 10 }}>
-                    What the SDK reports
-                  </div>
-                  <div style={{ display: 'grid', gap: 8, fontSize: 12, color: 'var(--text-2)' }}>
-                    <div>Raw keys rendered to users, like <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-1)' }}>checkout.pay_now</span></div>
-                    <div>Placeholder leaks, like <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-1)' }}>{'{user_name}'}</span></div>
-                    <div>Explicit fallback-locale renders</div>
-                    <div>Empty translation values</div>
-                  </div>
+                {/* What gets reported — compact tag strip */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>reports:</span>
+                  {['raw key', 'placeholder leak', 'fallback copy', 'empty value'].map(label => (
+                    <span key={label} className="tag tag-neutral repo-chip">{label}</span>
+                  ))}
                 </div>
+
+                {/* Setup checklist */}
+                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 4 }}>status</span>
+                  {([
+                    { label: 'connected', done: true },
+                    { label: 'webhook', done: !!data.repo.webhook_id, localOnly: !data.repo.webhook_id && origin.includes('localhost') },
+                    { label: 'ingest key', done: !!data.repo.public_ingest_key },
+                    { label: 'first incident', done: data.incidents.length > 0 },
+                  ] as { label: string; done: boolean; localOnly?: boolean }[]).map(step => (
+                    <span key={step.label} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '3px 8px', borderRadius: 6, fontSize: 11,
+                      fontFamily: 'var(--font-mono)',
+                      background: step.done ? 'rgba(63,200,122,0.08)' : step.localOnly ? 'rgba(230,168,23,0.06)' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${step.done ? 'rgba(63,200,122,0.2)' : step.localOnly ? 'rgba(230,168,23,0.2)' : 'var(--border)'}`,
+                      color: step.done ? 'var(--success)' : step.localOnly ? 'var(--warning)' : 'var(--text-3)',
+                    }}>
+                      {step.done
+                        ? <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        : <div style={{ width: 5, height: 5, borderRadius: '50%', background: step.localOnly ? 'var(--warning)' : 'var(--border-bright)', flexShrink: 0 }} />
+                      }
+                      {step.localOnly ? 'webhook (needs deploy)' : step.label}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Env config */}
+                <EnvConfigBlock repoId={data.repo.id} ingestKey={data.repo.public_ingest_key ?? ''} apiBase={origin} />
               </div>
 
               <div style={{ display: 'grid', gap: 14, position: 'sticky', top: 72 }}>
                 <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                  <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600, marginBottom: 10 }}>
-                    Quick test
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>
+                    credentials
                   </div>
                   <div style={{ display: 'grid', gap: 12 }}>
-                    <div style={{ display: 'grid', gap: 8, fontSize: 12, color: 'var(--text-2)' }}>
-                      <div>1. Copy one setup snippet into the target app.</div>
-                      <div>2. Trigger a raw key or placeholder leak once.</div>
-                      <div>3. Watch the recent incident feed update below.</div>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>repo id</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.id}</div>
                     </div>
-                    <div style={{ display: 'grid', gap: 12 }}>
-                      <div>
-                        <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>repo id</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.id}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>ingest key</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.public_ingest_key}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>api base</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{origin}</div>
-                      </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>ingest key</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.public_ingest_key}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>api base</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{origin}</div>
                     </div>
                   </div>
                 </div>

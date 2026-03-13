@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import LandingPage from './landing/page';
 
 export default async function Home() {
   const user = await getAuthenticatedUser();
 
   if (!user) {
-    redirect('/landing');
+    return <LandingPage />;
   }
 
   const db = supabaseAdmin();

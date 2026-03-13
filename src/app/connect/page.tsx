@@ -641,7 +641,7 @@ export default function ConnectPage() {
                       type="password"
                       hint={
                         <span>
-                          Needs <code style={{ background: 'var(--border)', padding: '1px 4px', borderRadius: 3, fontSize: 10 }}>repo</code> scope.{' '}
+                          Needs <code style={{ background: 'var(--border)', padding: '1px 4px', borderRadius: 3, fontSize: 10 }}>repo</code> + <code style={{ background: 'var(--border)', padding: '1px 4px', borderRadius: 3, fontSize: 10 }}>admin:repo_hook</code> scopes.{' '}
                           <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener noreferrer"
                             style={{ color: 'var(--accent)', textDecoration: 'none' }}>
                             Generate one <ExternalLink size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />

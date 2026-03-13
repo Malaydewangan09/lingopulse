@@ -182,10 +182,64 @@ function useReveal() {
 
 // ── Components ────────────────────────────────────────────────────────────────
 
-function RevealSection({ children, delay = '0s', style = {} }: { children: React.ReactNode; delay?: string; style?: React.CSSProperties }) {
+function RevealSection({ children, delay = '0s', style = {}, blur = false }: { children: React.ReactNode; delay?: string; style?: React.CSSProperties; blur?: boolean }) {
   const ref = useReveal();
   return (
-    <div ref={ref} className="reveal" style={{ transitionDelay: delay, ...style }}>
+    <div ref={ref} className={blur ? 'reveal-blur' : 'reveal'} style={{ transitionDelay: delay, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function StaggerReveal({ children, style = {} }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  const ref = useReveal();
+  return (
+    <div ref={ref} className="reveal-stagger" style={style}>
+      {children}
+    </div>
+  );
+}
+
+function TiltCard({ children, className = '', style = {}, strength = 7 }: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  strength?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const frame = useRef(0);
+  const cur = useRef({ x: 0, y: 0 });
+  const tgt = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect();
+      tgt.current = {
+        x: ((e.clientX - r.left) / r.width - 0.5) * strength,
+        y: -((e.clientY - r.top) / r.height - 0.5) * strength,
+      };
+    };
+    const onLeave = () => { tgt.current = { x: 0, y: 0 }; };
+    const tick = () => {
+      cur.current.x += (tgt.current.x - cur.current.x) * 0.1;
+      cur.current.y += (tgt.current.y - cur.current.y) * 0.1;
+      el.style.transform = `perspective(900px) rotateY(${cur.current.x.toFixed(3)}deg) rotateX(${cur.current.y.toFixed(3)}deg)`;
+      frame.current = requestAnimationFrame(tick);
+    };
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseleave', onLeave);
+    frame.current = requestAnimationFrame(tick);
+    return () => {
+      el.removeEventListener('mousemove', onMove);
+      el.removeEventListener('mouseleave', onLeave);
+      cancelAnimationFrame(frame.current);
+    };
+  }, [strength]);
+
+  return (
+    <div ref={ref} className={className} style={{ ...style, willChange: 'transform' }}>
       {children}
     </div>
   );
@@ -202,11 +256,186 @@ const DARK_PANEL_TEXT = '#D9E4F1';
 const DARK_PANEL_MUTED = '#94A8BE';
 const DARK_PANEL_DIM = '#667A92';
 
+// ── Screenshots Section ───────────────────────────────────────────────────────
+
+const SCREENSHOT_TABS = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    tag: 'Coverage map',
+    tagColor: 'var(--accent)',
+    description: 'Locale coverage heatmap, quality scores, and live production incidents — all in one view.',
+    src: '/screenshots/dashboard.png',
+    alt: 'Lingo Pulse dashboard showing coverage heatmap and live incidents',
+  },
+  {
+    id: 'scan-diff',
+    label: 'Scan Diff',
+    tag: 'Release signal',
+    tagColor: 'var(--blue)',
+    description: 'Every push generates a scan diff. See what regressed, what recovered, and create a draft fix PR in one click.',
+    src: '/screenshots/scan-diff.png',
+    alt: 'Lingo Pulse scan diff view showing missing key recoveries and regressions',
+  },
+  {
+    id: 'sdk',
+    label: 'SDK',
+    tag: 'Production incidents',
+    tagColor: 'var(--warning)',
+    description: 'Embed the lightweight SDK and catch raw keys and placeholder leaks the moment real users encounter them.',
+    src: '/screenshots/sdk.png',
+    alt: 'Lingo Pulse SDK setup page with live incident feed',
+  },
+  {
+    id: 'connect',
+    label: 'Connect',
+    tag: 'Setup',
+    tagColor: 'var(--text-2)',
+    description: 'Connect via GitHub OAuth to browse your repos, or paste a token directly for private access.',
+    src: '/screenshots/connect.png',
+    alt: 'Lingo Pulse connect page with GitHub OAuth repo picker',
+  },
+];
+
+function ScreenshotsSection() {
+  const [active, setActive] = useState(SCREENSHOT_TABS[0].id);
+  const [displayed, setDisplayed] = useState(SCREENSHOT_TABS[0].id);
+  const [phase, setPhase] = useState<'idle' | 'exit' | 'enter'>('idle');
+  const tab = SCREENSHOT_TABS.find(t => t.id === displayed)!;
+
+  function switchTab(id: string) {
+    if (id === active || phase !== 'idle') return;
+    setActive(id);
+    setPhase('exit');
+    setTimeout(() => {
+      setDisplayed(id);
+      setPhase('enter');
+      setTimeout(() => setPhase('idle'), 380);
+    }, 180);
+  }
+
+  const contentStyle: React.CSSProperties = {
+    transition: 'opacity 0.18s ease, transform 0.18s ease',
+    opacity: phase === 'exit' ? 0 : 1,
+    transform: phase === 'exit' ? 'translateY(6px)' : phase === 'enter' ? 'translateY(0)' : 'translateY(0)',
+    animation: phase === 'enter' ? 'screenshotEnter 0.36s cubic-bezier(0.22,1,0.36,1) both' : 'none',
+  };
+
+  return (
+    <RevealSection blur>
+      <style>{`
+        @keyframes screenshotEnter {
+          from { opacity: 0; transform: translateY(14px) scale(0.995); }
+          to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+        @keyframes captionEnter {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <section style={{ borderTop: '1px solid var(--border)', padding: `88px 28px 80px` }}>
+        <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div className="mono-badge" style={{
+              background: 'rgba(75,158,255,0.08)', border: '1px solid rgba(75,158,255,0.18)',
+              color: 'var(--blue)', marginBottom: 20, display: 'inline-flex',
+            }}>
+              Product tour
+            </div>
+            <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 42px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: 12 }}>
+              See it in action
+            </h2>
+            <p style={{ color: 'var(--text-2)', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
+              Real screenshots from a live repository connected to Lingo Pulse.
+            </p>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 36, flexWrap: 'wrap' }}>
+            {SCREENSHOT_TABS.map(t => (
+              <button
+                key={t.id}
+                onClick={() => switchTab(t.id)}
+                style={{
+                  padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  fontFamily: 'var(--font-sans)', cursor: 'pointer',
+                  border: active === t.id ? '1px solid var(--accent-glow)' : '1px solid var(--border)',
+                  background: active === t.id ? 'var(--accent-dim)' : 'transparent',
+                  color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
+                  transition: 'all 0.18s',
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Caption — animates with the screenshot */}
+          <div
+            key={displayed}
+            style={{
+              textAlign: 'center', marginBottom: 24,
+              animation: phase === 'enter' ? 'captionEnter 0.3s ease both' : 'none',
+            }}
+          >
+            <span style={{
+              fontFamily: 'DM Mono, monospace', fontSize: 11, letterSpacing: '0.08em',
+              textTransform: 'uppercase', color: tab.tagColor, marginRight: 10,
+            }}>
+              {tab.tag}
+            </span>
+            <span style={{ color: 'var(--text-2)', fontSize: 14 }}>{tab.description}</span>
+          </div>
+
+          {/* Screenshot frame */}
+          <div style={{
+            borderRadius: 18, border: '1px solid var(--border)',
+            overflow: 'hidden', background: 'var(--card)',
+            boxShadow: '0 40px 100px rgba(0,0,0,0.5)',
+            position: 'relative',
+          }}>
+            {/* Window chrome */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '12px 18px', borderBottom: '1px solid var(--border)',
+              background: 'var(--card)',
+            }}>
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--danger)', opacity: 0.8 }} />
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--warning)', opacity: 0.8 }} />
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--success)', opacity: 0.8 }} />
+              <span style={{ marginLeft: 10, fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                lingopulse.app
+              </span>
+              {/* Active tab name in chrome bar */}
+              <span style={{
+                marginLeft: 'auto', fontSize: 10, color: tab.tagColor,
+                fontFamily: 'DM Mono, monospace', letterSpacing: '0.06em',
+                transition: 'color 0.2s',
+              }}>
+                {tab.label.toLowerCase()}
+              </span>
+            </div>
+            <div style={contentStyle}>
+              <img
+                src={tab.src}
+                alt={tab.alt}
+                style={{ width: '100%', display: 'block' }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    </RevealSection>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const router = useRouter();
   const dark = useIsDark();
+  const heroGlowRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{
@@ -260,11 +489,26 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ── */}
-      <section style={{
-        maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-        position: 'relative',
-      }}>
+      <section
+        onMouseMove={e => {
+          if (!heroGlowRef.current) return;
+          const r = e.currentTarget.getBoundingClientRect();
+          heroGlowRef.current.style.transform = `translate(${e.clientX - r.left - 350}px, ${e.clientY - r.top - 350}px)`;
+        }}
+        style={{
+          maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+          position: 'relative', overflow: 'hidden',
+        }}
+      >
+        {/* Mouse-follow ambient glow */}
+        <div ref={heroGlowRef} style={{
+          position: 'absolute', top: 0, left: 0, pointerEvents: 'none', zIndex: 0,
+          width: 700, height: 700, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, rgba(0,229,160,0.04) 40%, transparent 65%)',
+          transform: 'translate(270px, -200px)',
+        }} />
+
         {/* Pill badge */}
         <div className="animate-fade-up mono-badge" style={{
           background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
@@ -345,7 +589,7 @@ export default function LandingPage() {
         </div>
 
         {/* Hero heatmap card */}
-        <div className="animate-fade-up animate-glow-pulse" style={{
+        <TiltCard strength={5} className="animate-fade-up animate-glow-pulse" style={{
           position: 'relative', maxWidth: 580, width: '100%',
           background: 'var(--card)', border: '1px solid var(--border)',
           borderRadius: 18, padding: '22px 26px',
@@ -427,7 +671,7 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
+        </TiltCard>
       </section>
 
       {/* ── Stats bar ── */}
@@ -437,7 +681,7 @@ export default function LandingPage() {
           background: 'linear-gradient(90deg, rgba(0,229,160,0.025) 0%, rgba(75,158,255,0.015) 100%)',
           padding: LANDING_BAND_PADDING,
         }}>
-          <div style={{
+          <StaggerReveal style={{
             maxWidth: LANDING_SHELL_MAX, margin: '0 auto',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 0, flexWrap: 'wrap',
@@ -460,7 +704,7 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </section>
       </RevealSection>
 
@@ -488,7 +732,7 @@ export default function LandingPage() {
 
       {/* ── Features ── */}
       <section style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING }}>
-        <RevealSection>
+        <RevealSection blur>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
             <div
               style={{
@@ -848,7 +1092,7 @@ export default function LandingPage() {
       {/* ── How it works ── */}
       <section style={{ borderTop: '1px solid var(--border)', padding: LANDING_WIDE_SECTION_PADDING }}>
         <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
-          <RevealSection>
+          <RevealSection blur>
             <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.03em', textAlign: 'center', marginBottom: 12 }}>
               Set up in 3 steps
             </h2>
@@ -1012,6 +1256,9 @@ export default function LandingPage() {
           </RevealSection>
         </div>
       </section>
+
+      {/* ── Product Screenshots ── */}
+      <ScreenshotsSection />
 
       {/* ── CTA Banner ── */}
       <RevealSection>
