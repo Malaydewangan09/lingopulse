@@ -280,11 +280,9 @@ export default function LandingPage() {
         position: 'relative',
       }}>
         {/* Pill badge */}
-        <div className="animate-fade-up" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '5px 14px', borderRadius: 100,
+        <div className="animate-fade-up mono-badge" style={{
           background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
-          fontSize: 12, color: 'var(--accent)', fontFamily: 'DM Mono, monospace',
+          color: 'var(--accent)',
           marginBottom: 28, animationDelay: '0s',
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', animation: 'pulseDot 2s infinite' }} />
@@ -370,19 +368,14 @@ export default function LandingPage() {
         }}>
           {/* Floating badges */}
           {FLOAT_BADGES.map((b, i) => (
-            <div key={i} style={{
+            <div key={i} className="mono-badge mono-badge-sm" style={{
               position: 'absolute',
               top: b.top,
               left: b.left,
               right: b.right,
               background: 'var(--card)',
               border: `1px solid ${b.color}44`,
-              borderRadius: 100,
-              padding: '4px 10px',
-              fontSize: 10,
-              fontFamily: 'DM Mono, monospace',
               color: b.color,
-              whiteSpace: 'nowrap',
               animation: `float ${3.5 + i * 0.4}s ease-in-out ${b.delay} infinite`,
               boxShadow: `0 4px 16px rgba(0,0,0,0.4), 0 0 12px ${b.color}22`,
               zIndex: 2,
@@ -513,18 +506,12 @@ export default function LandingPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
             <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '5px 14px',
-                borderRadius: 100,
                 background: 'rgba(75,158,255,0.08)',
                 border: '1px solid rgba(75,158,255,0.18)',
-                fontSize: 12,
                 color: 'var(--blue)',
-                fontFamily: 'DM Mono, monospace',
                 marginBottom: 22,
               }}
+              className="mono-badge"
             >
               Translation operations
             </div>
@@ -698,10 +685,42 @@ export default function LandingPage() {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginTop: 18 }}>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <span className="tag tag-accent">healthy</span>
-                      <span className="tag tag-warning">watch</span>
-                      <span className="tag tag-danger">blocked</span>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'healthy', tone: 'var(--accent)' },
+                        { label: 'watch', tone: 'var(--warning)' },
+                        { label: 'blocked', tone: 'var(--danger)' },
+                      ].map(item => (
+                        <div
+                          key={item.label}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            minHeight: 26,
+                            padding: '5px 10px',
+                            borderRadius: 7,
+                            border: `1px solid ${item.tone}33`,
+                            background: 'rgba(255,255,255,0.02)',
+                            color: item.tone,
+                            fontSize: 11,
+                            fontFamily: 'DM Mono, monospace',
+                            lineHeight: 1.1,
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 7,
+                              height: 7,
+                              borderRadius: '50%',
+                              background: item.tone,
+                              boxShadow: `0 0 10px ${item.tone}44`,
+                              flexShrink: 0,
+                            }}
+                          />
+                          {item.label}
+                        </div>
+                      ))}
                     </div>
                     <div style={{ fontSize: 11, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace' }}>
                       Full locale matrix stays in the dashboard

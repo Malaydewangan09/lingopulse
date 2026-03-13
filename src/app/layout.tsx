@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Lingo Pulse — i18n Observability",
+  title: "Lingo Pulse",
   description: "Real-time translation coverage, quality scores, and localization health for your codebase.",
 };
 

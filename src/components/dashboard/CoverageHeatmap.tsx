@@ -135,12 +135,50 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
       />
 
       {moduleSummary.length > 0 && (
-        <div style={{ padding: '12px 20px 0', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {moduleSummary.slice(0, 3).map(module => (
-            <span key={module.name} className={`tag ${module.averageCoverage >= 88 ? 'tag-success' : module.averageCoverage >= 60 ? 'tag-warning' : 'tag-danger'}`}>
-              {module.name} · {module.missingKeys} missing
-            </span>
-          ))}
+        <div
+          style={{
+            padding: '12px 20px 0',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 10,
+          }}
+        >
+          {moduleSummary.slice(0, 3).map(module => {
+            const tone = module.averageCoverage >= 88
+              ? { color: 'var(--success)', border: 'rgba(63,200,122,0.24)', bg: 'rgba(63,200,122,0.08)' }
+              : module.averageCoverage >= 60
+              ? { color: 'var(--warning)', border: 'rgba(230,168,23,0.24)', bg: 'rgba(230,168,23,0.08)' }
+              : { color: 'var(--danger)', border: 'rgba(240,82,72,0.24)', bg: 'rgba(240,82,72,0.08)' };
+
+            return (
+              <div
+                key={module.name}
+                style={{
+                  minWidth: 0,
+                  borderRadius: 10,
+                  border: `1px solid ${tone.border}`,
+                  background: tone.bg,
+                  padding: '10px 12px',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+              >
+                <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  hotspot module
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
+                  <span style={{ minWidth: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {module.name}
+                  </span>
+                  <span style={{ flexShrink: 0, fontSize: 12, fontFamily: 'DM Mono, monospace', color: tone.color }}>
+                    {module.missingKeys} missing
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                  {module.averageCoverage.toFixed(1)}% average coverage
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -342,11 +342,9 @@ export default function ConnectPage() {
             { icon: <Shield size={11} />, label: 'PR checks' },
             { icon: <Zap size={11} />, label: 'Live webhook updates' },
           ].map(({ icon, label }) => (
-            <div key={label} style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '4px 10px', borderRadius: 100,
+            <div key={label} className="mono-badge mono-badge-sm" style={{
               background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
-              fontSize: 11, color: 'var(--accent)', fontFamily: 'DM Mono, monospace',
+              color: 'var(--accent)',
             }}>
               {icon}{label}
             </div>
@@ -516,7 +514,7 @@ export default function ConnectPage() {
                           ? 'Loading repos from GitHub...'
                           : `${filteredRepos.length} repos available from your GitHub session`}
                       </div>
-                      <span className="tag tag-accent">OAuth-backed</span>
+                      <span className="tag tag-accent repo-chip">OAuth</span>
                     </div>
 
                     <div
@@ -602,14 +600,14 @@ export default function ConnectPage() {
                                       {repo.description || 'No description provided'}
                                     </div>
                                   </div>
-                                  <span className={repo.private ? 'tag tag-warning' : 'tag tag-neutral'}>
+                                  <span className={`${repo.private ? 'tag tag-warning' : 'tag tag-neutral'} repo-chip`}>
                                     {repo.private ? 'private' : 'public'}
                                   </span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
                                   <span>{repo.default_branch}</span>
                                   <span>updated {new Date(repo.updated_at).toLocaleDateString()}</span>
-                                  {isSelected && <span style={{ color: 'var(--accent)' }}>selected</span>}
+                                  {isSelected && <span className="tag tag-accent repo-chip">selected</span>}
                                 </div>
                               </button>
                             );
@@ -695,10 +693,10 @@ export default function ConnectPage() {
                         {selectedRepo.description || 'This repo is ready to connect and scan.'}
                       </div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <span className={selectedRepo.private ? 'tag tag-warning' : 'tag tag-neutral'}>
-                          {selectedRepo.private ? 'private repo' : 'public repo'}
+                        <span className={`${selectedRepo.private ? 'tag tag-warning' : 'tag tag-neutral'} repo-chip`}>
+                          {selectedRepo.private ? 'private' : 'public'}
                         </span>
-                        <span className="tag tag-neutral">
+                        <span className="tag tag-neutral repo-chip">
                           <GitBranch size={10} />
                           {selectedRepo.default_branch}
                         </span>

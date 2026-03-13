@@ -147,11 +147,9 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
 
         {/* Webhook status */}
         {repo.webhookActive && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '4px 10px', borderRadius: 100,
+          <div className="mono-badge mono-badge-sm" style={{
             background: 'rgba(63,200,122,0.08)', border: '1px solid rgba(63,200,122,0.2)',
-            fontSize: 11, color: 'var(--success)', fontFamily: 'DM Mono, monospace',
+            color: 'var(--success)',
           }}>
             <span className="status-live" />
             webhook active
