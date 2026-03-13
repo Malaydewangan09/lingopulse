@@ -16,6 +16,8 @@ export interface LocaleFile {
   moduleName: string;
   keys: Record<string, string>;   // flat: "auth.login.button" → "Sign in"
   keyCount: number;
+  format: 'json' | 'yaml';
+  wrappedByLocale: boolean;
 }
 
 export interface FileCoverageResult {
@@ -52,27 +54,45 @@ export interface AnalysisResult {
 
 const LOCALE_CODE_RE = /^[a-z]{2}(?:[-_][A-Za-z]{2,4})?$/;
 
-function parseFileContent(content: string, path: string): Record<string, unknown> | null {
+interface ParsedLocalePayload {
+  data: Record<string, unknown>;
+  format: 'json' | 'yaml';
+  wrappedByLocale: boolean;
+}
+
+function parseFileContent(content: string, path: string): ParsedLocalePayload | null {
   try {
     let parsed: Record<string, unknown> | null = null;
+    let format: 'json' | 'yaml' = 'json';
     if (path.endsWith('.json')) parsed = JSON.parse(content);
-    else if (path.endsWith('.yaml') || path.endsWith('.yml')) parsed = yaml.load(content) as Record<string, unknown>;
+    else if (path.endsWith('.yaml') || path.endsWith('.yml')) {
+      parsed = yaml.load(content) as Record<string, unknown>;
+      format = 'yaml';
+    }
     if (!parsed || typeof parsed !== 'object') return null;
 
     // Unwrap locale-keyed format: {"en": {...}} or {"de": {...}}
     // Kestra and some other projects wrap all translations under the locale code
     const keys = Object.keys(parsed);
     if (keys.length === 1 && LOCALE_CODE_RE.test(keys[0]) && typeof parsed[keys[0]] === 'object') {
-      return parsed[keys[0]] as Record<string, unknown>;
+      return {
+        data: parsed[keys[0]] as Record<string, unknown>,
+        format,
+        wrappedByLocale: true,
+      };
     }
 
-    return parsed;
+    return {
+      data: parsed,
+      format,
+      wrappedByLocale: false,
+    };
   } catch {}
   return null;
 }
 
 /** Recursively flatten nested object into dot-notation keys */
-function flattenKeys(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
+export function flattenKeys(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj)) {
     const key = prefix ? `${prefix}.${k}` : k;
@@ -82,6 +102,30 @@ function flattenKeys(obj: Record<string, unknown>, prefix = ''): Record<string, 
       result[key] = v;
     }
   }
+  return result;
+}
+
+export function unflattenKeys(keys: Record<string, string>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [path, value] of Object.entries(keys)) {
+    const parts = path.split('.');
+    let cursor: Record<string, unknown> = result;
+
+    parts.forEach((part, index) => {
+      if (index === parts.length - 1) {
+        cursor[part] = value;
+        return;
+      }
+
+      const next = cursor[part];
+      if (!next || typeof next !== 'object' || Array.isArray(next)) {
+        cursor[part] = {};
+      }
+      cursor = cursor[part] as Record<string, unknown>;
+    });
+  }
+
   return result;
 }
 
@@ -106,15 +150,85 @@ function inferModuleName(path: string): string {
   return filename;
 }
 
-// ─── File grouping ───────────────────────────────────────────────────────────
+export function replaceLocaleInPath(path: string, fromLocale: string, toLocale: string): string {
+  const normalizedFrom = fromLocale.replace('-', '_');
+  const normalizedTo = toLocale.replace('-', '_');
 
-interface FileGroup {
-  moduleName: string;
-  files: Map<string, LocaleFile>;   // locale → LocaleFile
+  let next = path;
+  next = next.replace(new RegExp(`/(?:${fromLocale}|${normalizedFrom})(?=/)`, 'g'), `/${toLocale}`);
+  next = next.replace(new RegExp(`(^|[._-])(?:${fromLocale}|${normalizedFrom})(?=\\.(json|yaml|yml)$)`, 'g'), `$1${toLocale}`);
+  next = next.replace(new RegExp(`/(?:${fromLocale}|${normalizedFrom})(?=\\.(json|yaml|yml)$)`, 'g'), `/${toLocale}`);
+
+  return next.replace(new RegExp(normalizedTo, 'g'), toLocale);
 }
 
-function groupFilesByModule(localeFiles: LocaleFile[]): Map<string, FileGroup> {
-  const groups = new Map<string, FileGroup>();
+export function serializeLocaleFile(
+  keys: Record<string, string>,
+  locale: string,
+  format: 'json' | 'yaml',
+  wrappedByLocale: boolean,
+): string {
+  const nested = unflattenKeys(keys);
+  const payload = wrappedByLocale ? { [locale]: nested } : nested;
+
+  if (format === 'yaml') {
+    return yaml.dump(payload, {
+      lineWidth: 120,
+      noRefs: true,
+      sortKeys: true,
+    });
+  }
+
+  return `${JSON.stringify(payload, null, 2)}\n`;
+}
+
+export function parseLocaleFiles(files: GithubFile[]): LocaleFile[] {
+  const localeFiles: LocaleFile[] = [];
+
+  for (const file of files) {
+    const parsed = parseFileContent(file.content, file.path);
+    if (!parsed) continue;
+
+    const locale = inferLocale(file.path);
+    if (!locale) continue;
+
+    const keys = flattenKeys(parsed.data);
+    if (Object.keys(keys).length === 0) continue;
+
+    localeFiles.push({
+      locale,
+      filePath: file.path,
+      moduleName: inferModuleName(file.path),
+      keys,
+      keyCount: Object.keys(keys).length,
+      format: parsed.format,
+      wrappedByLocale: parsed.wrappedByLocale,
+    });
+  }
+
+  return localeFiles;
+}
+
+export function inferSourceLocaleFromFiles(localeFiles: LocaleFile[]): string {
+  const keyCountByLocale = new Map<string, number>();
+  for (const file of localeFiles) {
+    keyCountByLocale.set(file.locale, (keyCountByLocale.get(file.locale) ?? 0) + file.keyCount);
+  }
+
+  if (keyCountByLocale.has('en')) return 'en';
+
+  return [...keyCountByLocale.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'en';
+}
+
+export interface LocaleFileGroup {
+  moduleName: string;
+  files: Map<string, LocaleFile>;
+}
+
+// ─── File grouping ───────────────────────────────────────────────────────────
+
+export function groupFilesByModule(localeFiles: LocaleFile[]): Map<string, LocaleFileGroup> {
+  const groups = new Map<string, LocaleFileGroup>();
   for (const f of localeFiles) {
     if (!groups.has(f.moduleName)) {
       groups.set(f.moduleName, { moduleName: f.moduleName, files: new Map() });
@@ -230,26 +344,7 @@ export async function analyzeRepo(
   files: GithubFile[],
   lingoApiKey?: string,
 ): Promise<AnalysisResult> {
-  // Parse all files
-  const localeFiles: LocaleFile[] = [];
-  for (const f of files) {
-    const parsed = parseFileContent(f.content, f.path);
-    if (!parsed) continue;
-
-    const locale = inferLocale(f.path);
-    if (!locale) continue;
-
-    const keys = flattenKeys(parsed);
-    if (Object.keys(keys).length === 0) continue;
-
-    localeFiles.push({
-      locale,
-      filePath: f.path,
-      moduleName: inferModuleName(f.path),
-      keys,
-      keyCount: Object.keys(keys).length,
-    });
-  }
+  const localeFiles = parseLocaleFiles(files);
 
   if (localeFiles.length === 0) {
     return {
@@ -259,14 +354,7 @@ export async function analyzeRepo(
   }
 
   // Determine source locale (most keys wins, prefer 'en')
-  const keyCountByLocale = new Map<string, number>();
-  for (const f of localeFiles) {
-    keyCountByLocale.set(f.locale, (keyCountByLocale.get(f.locale) ?? 0) + f.keyCount);
-  }
-  let sourceLocale = 'en';
-  if (!keyCountByLocale.has('en')) {
-    sourceLocale = [...keyCountByLocale.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'en';
-  }
+  const sourceLocale = inferSourceLocaleFromFiles(localeFiles);
 
   const groups = groupFilesByModule(localeFiles);
   const locales = [...new Set(localeFiles.map(f => f.locale))];

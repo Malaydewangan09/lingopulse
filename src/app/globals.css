@@ -390,7 +390,7 @@ body::after {
 
 .repo-chip {
   min-height: 26px;
-  padding: 4px 6px;
+  padding: 4px 4px;
   border-radius: 8px;
 }
 

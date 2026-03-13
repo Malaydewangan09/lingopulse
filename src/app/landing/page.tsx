@@ -511,7 +511,7 @@ export default function LandingPage() {
                 color: 'var(--blue)',
                 marginBottom: 22,
               }}
-              className="mono-badge"
+              className="mono-badge "
             >
               Translation operations
             </div>
@@ -546,7 +546,7 @@ export default function LandingPage() {
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div className="landing-feature-panel-top">
                   <div style={{ maxWidth: 420 }}>
-                    <div className="tag tag-accent" style={{ marginBottom: 14 }}>Release surface</div>
+                    <div className="tag tag-accent repo-chip" style={{ marginBottom: 14 }}>Release surface</div>
                     <h3 style={{ fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 12, color: DARK_PANEL_TEXT }}>
                       Prioritize the modules that need work first.
                     </h3>
@@ -616,8 +616,8 @@ export default function LandingPage() {
                     <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_MUTED }}>
                       active release lanes
                     </span>
-                    <span className="tag tag-neutral" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>4 hotspots</span>
-                    <span className="tag tag-neutral" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>live priorities</span>
+                    <span className="tag tag-neutral repo-chip" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>4 hotspots</span>
+                    <span className="tag tag-neutral repo-chip" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>live priorities</span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -744,7 +744,7 @@ export default function LandingPage() {
                   color: DARK_PANEL_TEXT,
                 }}
               >
-                <div className="tag" style={{ marginBottom: 14, background: 'rgba(75,158,255,0.12)', borderColor: 'rgba(75,158,255,0.22)', color: 'var(--blue)' }}>
+                <div className="tag repo-chip" style={{ marginBottom: 14, background: 'rgba(75,158,255,0.12)', borderColor: 'rgba(75,158,255,0.22)', color: 'var(--blue)' }}>
                   AI quality scoring
                 </div>
                 <h3 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 10, color: DARK_PANEL_TEXT }}>
@@ -800,7 +800,7 @@ export default function LandingPage() {
                   color: DARK_PANEL_TEXT,
                 }}
               >
-                <div className="tag" style={{ marginBottom: 14, background: 'rgba(255,107,53,0.12)', borderColor: 'rgba(255,107,53,0.22)', color: 'var(--orange)' }}>
+                <div className="tag repo-chip" style={{ marginBottom: 14, background: 'rgba(255,107,53,0.12)', borderColor: 'rgba(255,107,53,0.22)', color: 'var(--orange)' }}>
                   PR gate checks
                 </div>
                 <h3 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 10, color: DARK_PANEL_TEXT }}>
@@ -849,8 +849,8 @@ export default function LandingPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
-                  <span className="tag tag-danger">merge block</span>
-                  <span className="tag tag-accent">quality check</span>
+                  <span className="tag tag-danger repo-chip">merge block</span>
+                  <span className="tag tag-accent repo-chip">quality check</span>
                 </div>
               </div>
             </RevealSection>
@@ -874,9 +874,9 @@ export default function LandingPage() {
             <div className="landing-process-inner">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <span className="tag tag-accent">3 minute setup</span>
-                  <span className="tag tag-neutral">GitHub native</span>
-                  <span className="tag tag-neutral">No config</span>
+                  <span className="tag tag-accent repo-chip">3 minute setup</span>
+                  <span className="tag tag-neutral repo-chip">GitHub native</span>
+                  <span className="tag tag-neutral repo-chip">No config</span>
                 </div>
                 <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_DIM }}>
                   Single flow from repository access to release monitoring
@@ -907,7 +907,7 @@ export default function LandingPage() {
                             {kicker}
                           </div>
                           <span
-                            className="tag tag-neutral"
+                            className="tag tag-neutral repo-chip"
                             style={{
                               background: 'rgba(255,255,255,0.04)',
                               borderColor: 'rgba(255,255,255,0.08)',
@@ -969,7 +969,7 @@ export default function LandingPage() {
                                 </span>
                               </div>
                               <span
-                                className="tag tag-neutral"
+                                className="tag tag-neutral repo-chip"
                                 style={{
                                   background: 'rgba(255,255,255,0.04)',
                                   borderColor: 'rgba(255,255,255,0.08)',
