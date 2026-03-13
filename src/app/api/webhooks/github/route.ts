@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { validateWebhookSignature } from '@/lib/github';
+import { isI18nFilePath, listPullRequestFiles, validateWebhookSignature } from '@/lib/github';
 import { analyzeAndStore } from '@/app/api/repos/route';
 
 interface GithubWebhookBody {
@@ -84,6 +84,15 @@ export async function POST(req: NextRequest) {
     const branch    = body.pull_request?.head?.ref ?? '';
     const commitSha = body.pull_request?.head?.sha ?? '';
     const author    = body.pull_request?.user?.login ?? 'unknown';
+    const prFiles   = prNumber > 0 ? await listPullRequestFiles(fullName, prNumber, repos[0].github_token).catch(() => []) : [];
+    const touchesI18n = prFiles.some(isI18nFilePath);
+
+    if (!touchesI18n) {
+      await Promise.all(repos.map(repo =>
+        db.from('pr_checks').delete().eq('repo_id', repo.id).eq('pr_number', prNumber)
+      ));
+      return NextResponse.json({ ok: true, skipped: 'no i18n files changed' });
+    }
 
     for (const repo of repos) {
       analyzeAndStore(

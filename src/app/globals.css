@@ -4,8 +4,8 @@
 @import '@fontsource/dm-mono/500.css';
 
 @theme inline {
-  --font-sans: 'DM Sans Variable', sans-serif;
-  --font-mono: 'DM Mono', 'Fira Code', monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
   --color-bg:           #070B14;
   --color-surface:      #0D1117;
@@ -91,9 +91,58 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 body {
   background-color: var(--bg);
   color: var(--text-1);
-  font-family: 'DM Sans Variable', monospace;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
+  min-height: 100vh;
+}
+
+body.app-product {
+  --bg: #07090d;
+  --surface: #0c1015;
+  --card: #10151c;
+  --card-hover: #151b24;
+  --border: #18212b;
+  --border-bright: #22303d;
+  --accent: #00E5A0;
+  --accent-dim: rgba(0, 229, 160, 0.12);
+  --accent-glow: rgba(0, 229, 160, 0.25);
+  --blue: #4B9EFF;
+  --text-1: #D1DBE6;
+  --text-2: #7A8FA0;
+  --text-3: #3D5068;
+  --success: #3FC87A;
+  --warning: #E6A817;
+  --danger: #F05248;
+  background-color: var(--bg);
+}
+
+html.light body.app-product {
+  --bg: #eef3f8;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --card-hover: #f1f5fa;
+  --border: #d7e0ea;
+  --border-bright: #bcc9d8;
+  --accent: #009966;
+  --accent-dim: rgba(0, 153, 102, 0.1);
+  --accent-glow: rgba(0, 153, 102, 0.3);
+  --blue: #4B9EFF;
+  --text-1: #16202c;
+  --text-2: #445467;
+  --text-3: #69788a;
+  --success: #5f876c;
+  --warning: #a27c45;
+  --danger: #b16464;
+}
+
+body.app-product::before,
+body.app-product::after {
+  display: none;
+}
+
+body.app-product .dashboard-content-offset {
+  background: var(--bg);
   min-height: 100vh;
 }
 
@@ -148,6 +197,26 @@ body::after {
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 14px;
   margin-bottom: 14px;
+}
+
+.dashboard-overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 14px;
+  align-items: start;
+}
+
+.dashboard-main-stack,
+.dashboard-side-stack {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.dashboard-scan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .dashboard-bottom-grid {
@@ -262,7 +331,7 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 16px;
   font-weight: 700;
   box-shadow: 0 0 0 8px rgba(7,11,20,0.55);
@@ -352,7 +421,7 @@ body::after {
   border: 1px solid rgba(255,255,255,0.07);
   background: rgba(255,255,255,0.03);
   color: var(--text-2);
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1;
   white-space: nowrap;
@@ -375,7 +444,8 @@ body::after {
   min-height: 28px;
   padding: 6px 12px;
   border-radius: 10px;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: 11px;
   line-height: 1.1;
   white-space: nowrap;
@@ -484,7 +554,7 @@ body::after {
 }
 
 @layer utilities {
-  .font-mono { font-family: 'DM Mono', monospace; font-variant-numeric: tabular-nums; }
+  .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
   .animate-fade-up      { animation: fadeSlideUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
   .animate-fade-in      { animation: fadeIn 0.3s ease both; }
@@ -527,7 +597,7 @@ body::after {
     box-shadow: 0 0 0 1px var(--accent-glow), 0 0 20px var(--accent-dim);
   }
 
-  .tag {
+.tag {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -546,7 +616,7 @@ body::after {
     text-overflow: clip;
     overflow-wrap: normal;
     word-break: normal;
-    font-family: 'DM Mono', monospace;
+    font-family: var(--font-sans);
     font-weight: 500;
     letter-spacing: 0;
     border: 1px solid;
@@ -555,11 +625,11 @@ body::after {
   .tag svg {
     flex-shrink: 0;
   }
-  .tag-success { background: rgba(63,200,122,0.1);  color: var(--success); border-color: rgba(63,200,122,0.25); }
-  .tag-warning { background: rgba(230,168,23,0.1);  color: var(--warning); border-color: rgba(230,168,23,0.25); }
-  .tag-danger  { background: rgba(240,82,72,0.1);   color: var(--danger);  border-color: rgba(240,82,72,0.25);  }
-  .tag-accent  { background: var(--accent-dim);     color: var(--accent);  border-color: var(--accent-glow);    }
-  .tag-neutral { background: rgba(122,143,160,0.1); color: var(--text-2);  border-color: rgba(122,143,160,0.2); }
+  .tag-success { background: rgba(132,184,150,0.08);  color: var(--success); border-color: rgba(132,184,150,0.18); }
+  .tag-warning { background: rgba(199,165,106,0.08);  color: var(--warning); border-color: rgba(199,165,106,0.18); }
+  .tag-danger  { background: rgba(201,121,121,0.08);  color: var(--danger);  border-color: rgba(201,121,121,0.18);  }
+  .tag-accent  { background: var(--accent-dim);       color: var(--accent);  border-color: var(--accent-glow);      }
+  .tag-neutral { background: rgba(152,165,179,0.08); color: var(--text-2);  border-color: rgba(152,165,179,0.16);  }
 
   .cov-cell {
     border-radius: 3px;
@@ -579,8 +649,16 @@ body::after {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .dashboard-overview-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
   .dashboard-bottom-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-scan-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -589,7 +667,9 @@ body::after {
   .landing-feature-panel-top,
   .connect-form-grid,
   .dashboard-metrics-grid,
+  .dashboard-overview-layout,
   .dashboard-top-grid,
+  .dashboard-scan-grid,
   .dashboard-bottom-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -651,7 +731,9 @@ body::after {
 
   .dashboard-metrics-grid,
   .dashboard-insights-grid,
+  .dashboard-overview-layout,
   .dashboard-top-grid,
+  .dashboard-scan-grid,
   .dashboard-bottom-grid {
     grid-template-columns: minmax(0, 1fr);
   }

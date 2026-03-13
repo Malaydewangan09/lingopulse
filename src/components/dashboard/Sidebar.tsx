@@ -12,9 +12,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'overview',  label: 'Overview',   icon: <LayoutDashboard size={18} />, sectionId: 'section-overview'  },
-  { id: 'locales',   label: 'Locales',    icon: <Globe size={18} />,           sectionId: 'section-locales'   },
-  { id: 'trends',    label: 'Trends',     icon: <BarChart3 size={18} />,       sectionId: 'section-trends'    },
-  { id: 'prchecks',  label: 'PR Checks',  icon: <GitPullRequest size={18} />,  sectionId: 'section-prchecks' },
+  { id: 'locales',   label: 'Locales',    icon: <Globe size={18} />,           sectionId: 'section-workspace' },
+  { id: 'trends',    label: 'Trends',     icon: <BarChart3 size={18} />,       sectionId: 'section-workspace' },
+  { id: 'prchecks',  label: 'PR Checks',  icon: <GitPullRequest size={18} />,  sectionId: 'section-workspace' },
 ];
 
 interface Repo { id: string; name: string; full_name: string; }
@@ -86,7 +86,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
           onMouseLeave={() => setHoveredId(null)}
           style={{
             width: 36, height: 36, borderRadius: 9, border: 'none',
-            background: isActive ? 'var(--accent-dim)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
+            background: isActive ? 'var(--card-hover)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
             color: isActive ? 'var(--accent)' : 'var(--text-3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
@@ -123,7 +123,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
         title="Home"
         style={{
           width: 28, height: 28, borderRadius: 8, border: 'none',
-          background: 'linear-gradient(135deg, var(--accent) 0%, #00B87A 100%)',
+          background: 'var(--accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: 20, flexShrink: 0, cursor: 'pointer', padding: 0,
           transition: 'opacity 0.15s',
@@ -151,7 +151,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
                 onMouseLeave={() => setHoveredId(null)}
                 style={{
                   width: 36, height: 36, borderRadius: 9, border: 'none',
-                  background: isActive ? 'var(--accent-dim)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
+                  background: isActive ? 'var(--card-hover)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
                   color: isActive ? 'var(--accent)' : 'var(--text-3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
@@ -193,7 +193,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
             onMouseLeave={() => setHoveredId(null)}
             style={{
               width: 36, height: 36, borderRadius: 9, border: 'none',
-              background: showRepos ? 'var(--accent-dim)' : hoveredId === '__repos' ? 'rgba(255,255,255,0.05)' : 'transparent',
+              background: showRepos ? 'var(--card-hover)' : hoveredId === '__repos' ? 'rgba(255,255,255,0.05)' : 'transparent',
               color: showRepos ? 'var(--accent)' : 'var(--text-3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
@@ -325,7 +325,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
                       display: 'flex', alignItems: 'center', gap: 6, borderRadius: 5,
                       transition: 'background 0.12s',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-dim)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--card-hover)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <Plus size={11} /> Connect new repo

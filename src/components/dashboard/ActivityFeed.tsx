@@ -1,6 +1,6 @@
 'use client';
 import type { ActivityEvent } from '@/lib/types';
-import { GitCommit, GitMerge, GitPullRequest, Zap, AlertTriangle } from 'lucide-react';
+import { GitCommit, GitMerge, GitPullRequest, Zap, AlertTriangle, RadioTower } from 'lucide-react';
 import SectionHeader from '@/components/dashboard/SectionHeader';
 
 interface Props { events: ActivityEvent[]; }
@@ -13,6 +13,7 @@ function EventIcon({ type }: { type: ActivityEvent['type'] }) {
     pr_merged:   { icon: <GitMerge {...iconProps} />, color: '#C084FC',         bg: 'rgba(192,132,252,0.1)' },
     analysis:    { icon: <Zap {...iconProps} />, color: 'var(--warning)',       bg: 'rgba(230,168,23,0.1)' },
     regression:  { icon: <AlertTriangle {...iconProps} />, color: 'var(--danger)', bg: 'rgba(240,82,72,0.1)' },
+    incident:    { icon: <RadioTower {...iconProps} />, color: 'var(--danger)', bg: 'rgba(240,82,72,0.1)' },
   };
   const s = style[type];
   return (

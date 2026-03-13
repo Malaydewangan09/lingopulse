@@ -19,7 +19,7 @@ export default function SectionHeader({ title, subtitle, tooltip, right }: Props
           {tooltip && <Tooltip content={tooltip} width={260} />}
         </div>
         {subtitle && (
-          <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginTop: 2 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-sans)', marginTop: 2 }}>
             {subtitle}
           </p>
         )}

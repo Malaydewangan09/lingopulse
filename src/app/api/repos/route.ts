@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getRepoInfo, registerWebhook } from '@/lib/github';
+import { createOrUpdatePullRequestComment, getRepoInfo, registerWebhook } from '@/lib/github';
 import { fetchI18nFiles } from '@/lib/github';
 import { analyzeRepo, getLocaleMetadata } from '@/lib/analyze';
+import { buildPrCommentBody, computeScanDiff, snapshotFromAnalysisResult, snapshotFromStoredMetrics } from '@/lib/diff';
 import crypto from 'crypto';
 
 interface ConnectRepoRequest {
@@ -137,18 +138,42 @@ export async function analyzeAndStore(
   // Analyze
   const result = await analyzeRepo(files, lingoApiKey ?? undefined);
 
-  // Get previous run for delta
-  const { data: prevRun } = await db
+  // Get previous run for diff baseline
+  const baselineRunQuery = db
     .from('analysis_runs')
-    .select('overall_coverage')
+    .select('id, overall_coverage, quality_score, missing_keys, triggered_by')
     .eq('repo_id', repoId)
     .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+    .limit(1);
 
-  const coverageDelta = prevRun
-    ? Math.round((result.overallCoverage - (prevRun.overall_coverage ?? 0)) * 10) / 10
-    : 0;
+  const { data: scopedPrevRuns } = triggeredBy === 'pr'
+    ? await baselineRunQuery.neq('triggered_by', 'pr')
+    : await baselineRunQuery;
+
+  let prevRun = scopedPrevRuns?.[0] ?? null;
+
+  if (!prevRun && triggeredBy === 'pr') {
+    const { data: fallbackPrevRuns } = await db
+      .from('analysis_runs')
+      .select('id, overall_coverage, quality_score, missing_keys, triggered_by')
+      .eq('repo_id', repoId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    prevRun = fallbackPrevRuns?.[0] ?? null;
+  }
+
+  const previousLocales = prevRun
+    ? (await db.from('locale_metrics').select('locale, coverage, quality_score, missing_keys').eq('run_id', prevRun.id)).data ?? []
+    : [];
+  const previousFileMetrics = prevRun
+    ? (await db.from('file_metrics').select('locale, file_path, coverage, missing_keys').eq('run_id', prevRun.id)).data ?? []
+    : [];
+
+  const scanDiff = computeScanDiff(
+    snapshotFromAnalysisResult(result),
+    prevRun ? snapshotFromStoredMetrics(prevRun, previousLocales, previousFileMetrics) : null,
+  );
+  const coverageDelta = scanDiff.coverageDelta;
 
   // Insert run
   const { data: run, error: runErr } = await db.from('analysis_runs').insert({
@@ -206,8 +231,8 @@ export async function analyzeAndStore(
     .filter(l => l.locale !== result.sourceLocale && l.missingKeys > 0)
     .map(l => l.locale);
 
-  const eventType = coverageDelta < -1 ? 'regression'
-    : triggeredBy === 'pr' ? 'pr_opened'
+  const eventType = triggeredBy === 'pr' ? 'pr_opened'
+    : scanDiff.status === 'blocked' ? 'regression'
     : triggeredBy === 'push' ? 'push'
     : 'analysis';
 
@@ -224,7 +249,7 @@ export async function analyzeAndStore(
     if (recent && recent.length > 0) {
       // Skip creating duplicate event — just update the run
       await db.from('repos').update({ updated_at: new Date().toISOString() }).eq('id', repoId);
-      return { run, result, coverageDelta };
+      return { run, result, coverageDelta, scanDiff };
     }
   }
 
@@ -235,20 +260,23 @@ export async function analyzeAndStore(
     commit_sha:       commitSha ?? null,
     author:           author ?? 'lingo-bot',
     message:          commitSha
-      ? `Push on ${branch} · ${result.missingKeys} missing keys`
+      ? `Push on ${branch} · ${scanDiff.headline}`
       : triggeredBy === 'manual'
       ? `Manual analysis · ${result.locales.length} locales · ${result.missingKeys} missing keys`
-      : `Scheduled analysis · ${result.missingKeys} missing keys detected`,
+      : triggeredBy === 'pr'
+      ? `PR #${prNumber ?? '—'} · ${scanDiff.headline}`
+      : `Scheduled analysis · ${scanDiff.headline}`,
     coverage_delta:   coverageDelta,
     locales_affected: affectedLocales.slice(0, 8),
   });
 
   // Upsert PR check
   if (prNumber && triggeredBy === 'pr') {
-    const status = result.missingKeys === 0 ? 'passing'
-      : coverageDelta < -2 ? 'failing'
-      : coverageDelta < 0  ? 'warning'
-      : 'passing';
+    const status = scanDiff.status === 'safe'
+      ? 'passing'
+      : scanDiff.status === 'watch'
+      ? 'warning'
+      : 'failing';
 
     await db.from('pr_checks').upsert({
       repo_id:         repoId,
@@ -263,10 +291,21 @@ export async function analyzeAndStore(
       run_id:          run.id,
       updated_at:      new Date().toISOString(),
     }, { onConflict: 'repo_id,pr_number' });
+
+    try {
+      await createOrUpdatePullRequestComment(
+        fullName,
+        prNumber,
+        githubToken,
+        buildPrCommentBody(fullName, scanDiff),
+      );
+    } catch (error) {
+      console.error('Failed to sync PR comment', error);
+    }
   }
 
   // Update repo updated_at
   await db.from('repos').update({ updated_at: new Date().toISOString() }).eq('id', repoId);
 
-  return { run, result, coverageDelta };
+  return { run, result, coverageDelta, scanDiff };
 }

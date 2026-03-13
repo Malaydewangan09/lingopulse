@@ -110,6 +110,7 @@ export default function ConnectPage() {
 
   const selectedRepo = githubRepos.find(repo => repo.id === selectedRepoId) ?? null;
   const hasGithubPicker = githubProviderToken.length > 0;
+  const shellMaxWidth = step === 'form' ? 980 : 760;
 
   const handleSignOut = async () => {
     const supabase = createBrowserSupabaseClient();
@@ -299,7 +300,7 @@ export default function ConnectPage() {
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '8px 12px', borderRadius: 8,
           border: '1px solid var(--border)', background: 'transparent',
-          color: 'var(--text-2)', fontSize: 11, fontFamily: 'DM Mono, monospace',
+          color: 'var(--text-2)', fontSize: 11, fontFamily: 'var(--font-sans)', fontWeight: 500,
           cursor: 'pointer',
         }}
       >
@@ -312,7 +313,7 @@ export default function ConnectPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{
             width: 38, height: 38, borderRadius: 11,
-            background: 'linear-gradient(135deg, var(--accent) 0%, #00B87A 100%)',
+            background: 'var(--accent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
@@ -321,7 +322,7 @@ export default function ConnectPage() {
               <path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="#070B14" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <span style={{ fontFamily: 'DM Mono, monospace', fontWeight: 500, fontSize: 22, letterSpacing: '-0.02em', color: 'var(--text-1)' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 22, letterSpacing: '-0.03em', color: 'var(--text-1)' }}>
             lingo<span style={{ color: 'var(--accent)' }}>pulse</span>
           </span>
         </div>
@@ -343,8 +344,8 @@ export default function ConnectPage() {
             { icon: <Zap size={11} />, label: 'Live webhook updates' },
           ].map(({ icon, label }) => (
             <div key={label} className="mono-badge mono-badge-sm" style={{
-              background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
-              color: 'var(--accent)',
+              background: 'var(--card)', border: '1px solid var(--border)',
+              color: 'var(--text-2)',
             }}>
               {icon}{label}
             </div>
@@ -354,24 +355,19 @@ export default function ConnectPage() {
 
       {/* Card */}
       <div style={{
-        width: '100%', maxWidth: 980,
+        width: '100%', maxWidth: shellMaxWidth,
         background: 'var(--card)', border: '1px solid var(--border)',
         borderRadius: 16, overflow: 'hidden',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+        boxShadow: '0 20px 44px rgba(0,0,0,0.24)',
         animationDelay: '0.15s',
       }} className="animate-fade-up">
-
-        {/* Top glow */}
-        <div style={{
-          height: 1, background: 'linear-gradient(90deg, transparent, var(--accent-glow), transparent)',
-        }} />
 
         {step === 'form' && (
           <form onSubmit={handleSubmit} style={{ padding: 28 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-1)', marginBottom: 4 }}>
               Connect your repository
             </h2>
-            <p style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 24 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', marginBottom: 24 }}>
               Lingo Pulse will analyze your i18n files and track quality over time
             </p>
 
@@ -392,11 +388,12 @@ export default function ConnectPage() {
                   style={{
                     padding: '8px 12px',
                     borderRadius: 9,
-                    border: `1px solid ${repoSource === 'picker' ? 'var(--accent-glow)' : 'var(--border)'}`,
-                    background: repoSource === 'picker' ? 'var(--accent-dim)' : 'transparent',
+                    border: `1px solid ${repoSource === 'picker' ? 'var(--border-bright)' : 'var(--border)'}`,
+                    background: repoSource === 'picker' ? 'var(--card-hover)' : 'transparent',
                     color: repoSource === 'picker' ? 'var(--accent)' : 'var(--text-2)',
                     fontSize: 11,
-                    fontFamily: 'DM Mono, monospace',
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 500,
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -416,10 +413,11 @@ export default function ConnectPage() {
                     padding: '8px 12px',
                     borderRadius: 9,
                     border: `1px solid ${repoSource === 'manual' ? 'var(--border-bright)' : 'var(--border)'}`,
-                    background: repoSource === 'manual' ? 'rgba(255,255,255,0.03)' : 'transparent',
+                    background: repoSource === 'manual' ? 'var(--card-hover)' : 'transparent',
                     color: repoSource === 'manual' ? 'var(--text-1)' : 'var(--text-2)',
                     fontSize: 11,
-                    fontFamily: 'DM Mono, monospace',
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 500,
                     cursor: 'pointer',
                   }}
                 >
@@ -438,7 +436,7 @@ export default function ConnectPage() {
                   background: 'rgba(240,82,72,0.08)',
                   color: 'var(--danger)',
                   fontSize: 12,
-                  fontFamily: 'DM Mono, monospace',
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
                 {errorMsg}
@@ -449,7 +447,7 @@ export default function ConnectPage() {
               <div>
                 {hasGithubPicker && repoSource === 'picker' ? (
                   <>
-                    <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'DM Mono, monospace', marginBottom: 6 }}>
+                    <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', fontWeight: 500, marginBottom: 6 }}>
                       GitHub repository picker
                     </label>
                     <div
@@ -476,7 +474,7 @@ export default function ConnectPage() {
                           outline: 'none',
                           background: 'transparent',
                           color: 'var(--text-1)',
-                          fontFamily: 'DM Mono, monospace',
+                          fontFamily: 'var(--font-sans)',
                           fontSize: 12,
                           padding: '11px 0',
                         }}
@@ -509,7 +507,7 @@ export default function ConnectPage() {
                         flexWrap: 'wrap',
                       }}
                     >
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)' }}>
                         {pickerState === 'loading'
                           ? 'Loading repos from GitHub...'
                           : `${filteredRepos.length} repos available from your GitHub session`}
@@ -521,7 +519,7 @@ export default function ConnectPage() {
                       style={{
                         borderRadius: 14,
                         border: '1px solid var(--border)',
-                        background: 'rgba(255,255,255,0.02)',
+                        background: 'var(--surface)',
                         maxHeight: 332,
                         overflow: 'auto',
                         padding: 8,
@@ -544,7 +542,7 @@ export default function ConnectPage() {
                             padding: '14px 16px',
                             color: 'var(--danger)',
                             fontSize: 12,
-                            fontFamily: 'DM Mono, monospace',
+                            fontFamily: 'var(--font-sans)',
                             lineHeight: 1.6,
                           }}
                         >
@@ -584,8 +582,8 @@ export default function ConnectPage() {
                                 style={{
                                   textAlign: 'left',
                                   borderRadius: 12,
-                                  border: `1px solid ${isSelected ? 'var(--accent-glow)' : 'var(--border)'}`,
-                                  background: isSelected ? 'rgba(0,229,160,0.09)' : 'rgba(255,255,255,0.02)',
+                                  border: `1px solid ${isSelected ? 'var(--border-bright)' : 'var(--border)'}`,
+                                  background: isSelected ? 'var(--card-hover)' : 'var(--card)',
                                   padding: '12px 14px',
                                   cursor: 'pointer',
                                   transition: 'border-color 0.15s, transform 0.15s',
@@ -596,7 +594,7 @@ export default function ConnectPage() {
                                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', marginBottom: 4 }}>
                                       {repo.full_name}
                                     </div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                                    <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)' }}>
                                       {repo.description || 'No description provided'}
                                     </div>
                                   </div>
@@ -604,7 +602,7 @@ export default function ConnectPage() {
                                     {repo.private ? 'private' : 'public'}
                                   </span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)' }}>
                                   <span>{repo.default_branch}</span>
                                   <span>updated {new Date(repo.updated_at).toLocaleDateString()}</span>
                                   {isSelected && <span className="tag tag-accent repo-chip">selected</span>}
@@ -655,7 +653,7 @@ export default function ConnectPage() {
                   style={{
                     borderRadius: 14,
                     border: '1px solid var(--border)',
-                    background: 'rgba(255,255,255,0.03)',
+                    background: 'var(--surface)',
                     padding: '16px 16px 14px',
                   }}
                 >
@@ -666,8 +664,8 @@ export default function ConnectPage() {
                         height: 32,
                         borderRadius: 10,
                         background: hasGithubPicker && repoSource === 'picker'
-                          ? 'rgba(0,229,160,0.12)'
-                          : 'rgba(75,158,255,0.12)',
+                          ? 'color-mix(in srgb, var(--accent) 12%, transparent)'
+                          : 'color-mix(in srgb, var(--blue) 12%, transparent)',
                         color: hasGithubPicker && repoSource === 'picker' ? 'var(--accent)' : 'var(--blue)',
                         display: 'flex',
                         alignItems: 'center',
@@ -680,7 +678,7 @@ export default function ConnectPage() {
                       <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600 }}>
                         {hasGithubPicker && repoSource === 'picker' ? 'Selected repo' : 'Access model'}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)' }}>
                         {hasGithubPicker && repoSource === 'picker' ? 'Using your signed-in GitHub session' : 'Manual GitHub token mode'}
                       </div>
                     </div>
@@ -705,7 +703,7 @@ export default function ConnectPage() {
                         href={selectedRepo.html_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'DM Mono, monospace' }}
+                        style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-sans)', fontWeight: 500 }}
                       >
                         Open on GitHub <ExternalLink size={10} style={{ display: 'inline', verticalAlign: 'middle' }} />
                       </a>
@@ -723,11 +721,11 @@ export default function ConnectPage() {
                   style={{
                     borderRadius: 14,
                     border: '1px solid var(--border)',
-                    background: 'rgba(255,255,255,0.03)',
+                    background: 'var(--surface)',
                     padding: '16px 16px 14px',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', marginBottom: 8 }}>
                     token usage
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.7 }}>
@@ -760,7 +758,7 @@ export default function ConnectPage() {
             <button type="submit" style={{
               width: '100%', padding: '12px', marginTop: 8,
               background: 'var(--accent)', border: 'none', borderRadius: 9,
-              color: '#070B14', fontFamily: 'DM Mono, monospace',
+              color: '#0a1220', fontFamily: 'var(--font-sans)',
               fontSize: 13, fontWeight: 600, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               transition: 'opacity 0.15s, transform 0.15s',
@@ -777,28 +775,28 @@ export default function ConnectPage() {
           <div style={{ padding: 36, textAlign: 'center' }}>
             <div style={{
               width: 52, height: 52, borderRadius: 14, margin: '0 auto 20px',
-              background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
+              background: 'var(--card-hover)', border: '1px solid var(--border-bright)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--accent)',
             }}>
               <Zap size={22} />
             </div>
             <h3 style={{ fontSize: 15, color: 'var(--text-1)', marginBottom: 6 }}>Analyzing your repository…</h3>
-            <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 28, minHeight: 16 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', marginBottom: 28, minHeight: 16 }}>
               {progressLabel}
             </p>
 
             {/* Progress bar */}
             <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
               <div style={{
-                height: '100%', width: `${progress}%`, borderRadius: 3,
-                background: 'linear-gradient(90deg, #1A5C38, var(--accent))',
+              height: '100%', width: `${progress}%`, borderRadius: 3,
+                background: 'var(--accent)',
                 transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
-                boxShadow: '0 0 8px var(--accent-glow)',
+                boxShadow: 'none',
               }} />
             </div>
             <div style={{
-              fontFamily: 'DM Mono, monospace', fontSize: 11,
+              fontFamily: 'var(--font-mono)', fontSize: 11,
               color: 'var(--text-3)', marginTop: 8, textAlign: 'right',
             }}>
               {progress}%
@@ -817,7 +815,7 @@ export default function ConnectPage() {
               <CheckCircle2 size={24} />
             </div>
             <h3 style={{ fontSize: 15, color: 'var(--success)', marginBottom: 6 }}>Analysis complete!</h3>
-            <p style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', fontFamily: 'var(--font-sans)' }}>
               Redirecting to your dashboard…
             </p>
           </div>
@@ -828,14 +826,14 @@ export default function ConnectPage() {
             <div style={{
               padding: '12px 14px', borderRadius: 8, marginBottom: 20,
               background: 'rgba(240,82,72,0.08)', border: '1px solid rgba(240,82,72,0.2)',
-              fontSize: 12, color: 'var(--danger)', fontFamily: 'DM Mono, monospace',
+              fontSize: 12, color: 'var(--danger)', fontFamily: 'var(--font-sans)',
             }}>
               {errorMsg}
             </div>
             <button onClick={() => setStep('form')} style={{
               width: '100%', padding: '10px', background: 'var(--card-hover)',
               border: '1px solid var(--border)', borderRadius: 8,
-              color: 'var(--text-1)', fontFamily: 'DM Mono, monospace',
+              color: 'var(--text-1)', fontFamily: 'var(--font-sans)',
               fontSize: 12, cursor: 'pointer',
             }}>
               ← Try again
@@ -848,7 +846,7 @@ export default function ConnectPage() {
             <div style={{
               padding: '12px 14px', borderRadius: 8, marginBottom: 20,
               background: 'rgba(230,168,23,0.08)', border: '1px solid rgba(230,168,23,0.2)',
-              fontSize: 12, color: 'var(--warning)', fontFamily: 'DM Mono, monospace',
+              fontSize: 12, color: 'var(--warning)', fontFamily: 'var(--font-sans)',
               lineHeight: 1.6,
             }}>
               This repo is already connected. You can view its dashboard or force a fresh reconnect (deletes existing data and re-scans).
@@ -857,7 +855,7 @@ export default function ConnectPage() {
               {existingRepoId && (
                 <button onClick={() => router.push(`/repo/${existingRepoId}`)} style={{
                   width: '100%', padding: '10px', background: 'var(--accent)', border: 'none', borderRadius: 8,
-                  color: '#070B14', fontFamily: 'DM Mono, monospace', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  color: '#0a1220', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 }}>
                   Go to dashboard →
                 </button>
@@ -870,14 +868,14 @@ export default function ConnectPage() {
               }} style={{
                 width: '100%', padding: '10px', background: 'transparent',
                 border: '1px solid var(--border)', borderRadius: 8,
-                color: 'var(--text-2)', fontFamily: 'DM Mono, monospace',
+                color: 'var(--text-2)', fontFamily: 'var(--font-sans)',
                 fontSize: 12, cursor: 'pointer',
               }}>
                 Force reconnect (delete & re-scan)
               </button>
               <button onClick={() => setStep('form')} style={{
                 width: '100%', padding: '8px', background: 'transparent', border: 'none',
-                color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', fontSize: 11, cursor: 'pointer',
+                color: 'var(--text-3)', fontFamily: 'var(--font-sans)', fontSize: 11, cursor: 'pointer',
               }}>
                 ← Back
               </button>
@@ -892,7 +890,7 @@ export default function ConnectPage() {
           onClick={() => router.push('/')}
           style={{
             marginTop: 16, background: 'none', border: 'none',
-            color: 'var(--text-3)', fontSize: 11, fontFamily: 'DM Mono, monospace',
+            color: 'var(--text-3)', fontSize: 11, fontFamily: 'var(--font-sans)',
             cursor: 'pointer', transition: 'color 0.15s',
           }}
           onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
@@ -922,16 +920,16 @@ function Field({ label, icon, placeholder, value, onChange, required, type = 'te
   const [focused, setFocused] = useState(false);
   return (
     <div style={{ marginBottom: 18 }}>
-      <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'DM Mono, monospace', marginBottom: 6 }}>
+      <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', fontWeight: 500, marginBottom: 6 }}>
         {label}
       </label>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         background: 'var(--surface)', borderRadius: 8,
-        border: `1px solid ${focused ? 'var(--accent-glow)' : 'var(--border)'}`,
+        border: `1px solid ${focused ? 'var(--border-bright)' : 'var(--border)'}`,
         padding: '0 12px',
         transition: 'border-color 0.15s',
-        boxShadow: focused ? '0 0 0 3px rgba(0,229,160,0.08)' : 'none',
+        boxShadow: 'none',
       }}>
         <span style={{ color: focused ? 'var(--accent)' : 'var(--text-3)', transition: 'color 0.15s', flexShrink: 0 }}>
           {icon}
@@ -946,7 +944,7 @@ function Field({ label, icon, placeholder, value, onChange, required, type = 'te
           onBlur={() => setFocused(false)}
           style={{
             flex: 1, border: 'none', outline: 'none', background: 'transparent',
-            color: 'var(--text-1)', fontFamily: 'DM Mono, monospace', fontSize: 12,
+            color: 'var(--text-1)', fontFamily: 'var(--font-sans)', fontSize: 12,
             padding: '10px 0',
           }}
         />

@@ -37,7 +37,7 @@ export default function MetricCard({
     <div
       style={{
         background: 'var(--card)',
-        border: `1px solid ${accent ? 'rgba(0,229,160,0.2)' : 'var(--border)'}`,
+        border: `1px solid ${accent ? 'var(--accent-glow)' : 'var(--border)'}`,
         borderRadius: 12,
         padding: '18px 20px',
         display: 'flex', flexDirection: 'column', gap: 10,
@@ -49,21 +49,26 @@ export default function MetricCard({
         transitionDuration: '0.4s',
         transitionTimingFunction: 'cubic-bezier(0.16,1,0.3,1)',
         cursor: 'default',
-        boxShadow: accent ? '0 0 0 1px rgba(0,229,160,0.08), inset 0 0 40px rgba(0,229,160,0.03)' : 'none',
+        boxShadow: 'none',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = accent ? 'rgba(0,229,160,0.4)' : 'var(--border-bright)';
+        e.currentTarget.style.borderColor = accent ? 'var(--accent-glow)' : 'var(--border-bright)';
         e.currentTarget.style.transform = 'translateY(-1px)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.borderColor = accent ? 'rgba(0,229,160,0.2)' : 'var(--border)';
+        e.currentTarget.style.borderColor = accent ? 'var(--accent-glow)' : 'var(--border)';
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      {/* Top glow line */}
       <div style={{
-        position: 'absolute', top: 0, left: '15%', right: '15%', height: 1,
-        background: `linear-gradient(90deg, transparent, ${accentColor}40, transparent)`,
+        position: 'absolute',
+        top: 12,
+        left: 12,
+        width: 6,
+        height: 6,
+        borderRadius: '50%',
+        background: accentColor,
+        opacity: 0.75,
       }} />
 
       {/* Label row */}

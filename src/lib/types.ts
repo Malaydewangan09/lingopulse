@@ -37,7 +37,7 @@ export interface CoverageDataPoint {
 
 export interface ActivityEvent {
   id: string;
-  type: 'push' | 'pr_opened' | 'pr_merged' | 'analysis' | 'regression';
+  type: 'push' | 'pr_opened' | 'pr_merged' | 'analysis' | 'regression' | 'incident';
   repo: string;
   branch: string;
   author: string;
@@ -59,6 +59,74 @@ export interface PRCheck {
   coverageAfter: number;
   missingKeys: number;
   timestamp: string;
+  summary: string;
+  prUrl: string;
+}
+
+export interface ScanDiffSignal {
+  key: string;
+  label: string;
+  coverageDelta: number;
+  qualityDelta?: number;
+  missingDelta: number;
+  currentCoverage: number;
+  currentMissingKeys: number;
+  currentQualityScore?: number;
+}
+
+export interface ScanDiffSummary {
+  hasBaseline: boolean;
+  status: 'safe' | 'watch' | 'blocked';
+  headline: string;
+  summary: string;
+  recommendation: string;
+  coverageDelta: number;
+  qualityDelta: number;
+  missingKeysDelta: number;
+  regressedLocales: ScanDiffSignal[];
+  improvedLocales: ScanDiffSignal[];
+  regressedModules: ScanDiffSignal[];
+  improvedModules: ScanDiffSignal[];
+}
+
+export interface DraftFixResult {
+  prUrl: string;
+  branch: string;
+  filesUpdated: number;
+  localesTouched: string[];
+  keysFilled: number;
+  mode: 'lingo' | 'source';
+}
+
+export type TranslationIncidentIssueType = 'raw_key' | 'placeholder' | 'fallback' | 'empty';
+
+export interface TranslationIncident {
+  id: string;
+  issueType: TranslationIncidentIssueType;
+  locale: string;
+  route: string;
+  translationKey: string;
+  sampleText: string;
+  fallbackLocale?: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  hitCount: number;
+  appVersion?: string | null;
+  commitSha?: string | null;
+}
+
+export interface TranslationIncidentReport {
+  repoId: string;
+  ingestKey: string;
+  issueType: TranslationIncidentIssueType;
+  locale: string;
+  route?: string;
+  translationKey?: string;
+  sampleText?: string;
+  fallbackLocale?: string;
+  appVersion?: string;
+  commitSha?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface RepoInfo {

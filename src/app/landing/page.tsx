@@ -60,22 +60,22 @@ const QUALITY_SIGNALS = [
   { locale: 'de', score: '6.1', width: '61%', note: 'onboarding tone needs review', color: 'var(--warning)' },
 ];
 
-const PR_ACTIVITY = [
-  { title: 'checkout/ja missing 4 keys', meta: 'PR #284 blocked', color: 'var(--danger)' },
-  { title: 'es coverage recovered to 95%', meta: 'hotfix verified', color: 'var(--accent)' },
-  { title: 'pricing/fr dropped below threshold', meta: 'review queued', color: 'var(--warning)' },
+const SDK_EVENTS = [
+  { title: 'checkout.pay_now leaked in production', meta: 'ja · /checkout · raw key', color: 'var(--danger)' },
+  { title: '{user_name} rendered to users', meta: 'de · /welcome · placeholder leak', color: 'var(--warning)' },
+  { title: 'fr fallback copy detected after deploy', meta: 'fr · /billing · fallback locale', color: 'var(--accent)' },
 ];
 
 const FEATURE_SUMMARY = [
-  { label: 'risk cluster', value: 'checkout · de + ja', tone: 'var(--warning)' },
-  { label: 'release state', value: 'monitoring live', tone: 'var(--accent)' },
+  { label: 'latest diff', value: 'watch · settings', tone: 'var(--warning)' },
+  { label: 'draft fix PR', value: 'ready in one click', tone: 'var(--accent)' },
 ];
 
 const RELEASE_SURFACE = [
-  { module: 'checkout', detail: 'de + ja exposed', coverage: 61, state: 'needs review', tone: 'var(--warning)' },
-  { module: 'pricing', detail: 'fr wording drift', coverage: 88, state: 'watch closely', tone: 'var(--blue)' },
-  { module: 'errors', detail: 'ja gaps remain', coverage: 58, state: 'missing keys', tone: 'var(--danger)' },
-  { module: 'onboarding', detail: 'es + fr stable', coverage: 92, state: 'healthy', tone: 'var(--accent)' },
+  { module: 'settings', detail: 'fr + ja dropped since last baseline', coverage: 61, state: 'open draft fix PR', tone: 'var(--warning)' },
+  { module: 'checkout', detail: 'de placeholders resolved in hotfix', coverage: 88, state: 'recovered', tone: 'var(--blue)' },
+  { module: 'errors', detail: 'ja gaps still block merge', coverage: 58, state: 'missing keys', tone: 'var(--danger)' },
+  { module: 'billing', detail: 'es + fr stayed stable after push', coverage: 92, state: 'safe to ship', tone: 'var(--accent)' },
 ];
 
 const REPO_PATTERNS = [
@@ -125,17 +125,17 @@ const STEPS = [
   {
     num: '03',
     kicker: 'Monitor',
-    title: 'Keep release risk visible',
-    desc: 'Pushes refresh the dashboard and surface regressions early, so localization issues stay out of production.',
-    signal: 'Live updates',
+    title: 'Watch regressions before and after release',
+    desc: 'Pushes refresh scan diff and PR checks, while the SDK reports broken translations from production traffic when real users hit them.',
+    signal: 'Scan diff + SDK',
     tone: 'var(--warning)',
     previewTitle: 'Release watch',
-    previewNote: 'Signals refresh after every push',
+    previewNote: 'Pre-merge checks and post-deploy incidents',
     meter: { value: 92, label: 'watchers active' },
     previewItems: [
+      { label: 'scan diff opened draft fix PR', state: 'ready', tone: 'var(--accent)' },
       { label: 'PR #284 blocked on ja gaps', state: 'blocked', tone: 'var(--danger)' },
-      { label: 'fr tone drift queued for review', state: 'watch', tone: 'var(--warning)' },
-      { label: 'dashboard refreshed after push', state: 'live', tone: 'var(--accent)' },
+      { label: 'sdk reported raw key in checkout', state: 'live', tone: 'var(--warning)' },
     ],
   },
 ];
@@ -211,7 +211,7 @@ export default function LandingPage() {
   return (
     <div style={{
       position: 'relative', zIndex: 1, minHeight: '100vh',
-      fontFamily: "'DM Sans Variable', sans-serif", color: 'var(--text-1)',
+      fontFamily: 'var(--font-sans)', color: 'var(--text-1)',
     }}>
 
       {/* ── Nav ── */}
@@ -242,26 +242,12 @@ export default function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ThemeToggle />
           <button
-            onClick={() => router.push('/')}
-            style={{
-              padding: '7px 16px', borderRadius: 7,
-              background: 'transparent', border: '1px solid var(--border)',
-              color: 'var(--text-2)', fontSize: 13, cursor: 'pointer',
-              fontFamily: "'DM Sans Variable', sans-serif",
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-bright)'; e.currentTarget.style.color = 'var(--text-1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)'; }}
-          >
-            View demo
-          </button>
-          <button
             onClick={() => router.push('/auth')}
             style={{
               padding: '7px 18px', borderRadius: 7,
               background: 'var(--accent)', border: 'none',
               color: '#070B14', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-              fontFamily: "'DM Sans Variable', sans-serif",
+              fontFamily: 'var(--font-sans)',
               transition: 'opacity 0.15s, transform 0.15s',
               boxShadow: '0 0 20px rgba(0,229,160,0.2)',
             }}
@@ -319,7 +305,7 @@ export default function LandingPage() {
           fontSize: 18, color: 'var(--text-2)', maxWidth: 560,
           lineHeight: 1.65, marginBottom: 44, animationDelay: '0.16s',
         }}>
-          Connect a repository to scan locale files, detect missing keys, score translation quality, and track release regressions.
+          Connect a repository to scan locale files, diff every release, open draft fix PRs, and catch broken translations in production.
         </p>
 
         {/* CTAs */}
@@ -333,7 +319,7 @@ export default function LandingPage() {
               padding: '14px 32px', borderRadius: 10,
               background: 'var(--accent)', border: 'none',
               color: '#070B14', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-              fontFamily: "'DM Sans Variable', sans-serif",
+              fontFamily: 'var(--font-sans)',
               boxShadow: '0 0 40px rgba(0,229,160,0.3)',
               transition: 'opacity 0.15s, transform 0.15s, box-shadow 0.15s',
             }}
@@ -348,7 +334,7 @@ export default function LandingPage() {
               padding: '14px 28px', borderRadius: 10,
               background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-bright)',
               color: 'var(--text-1)', fontSize: 15, fontWeight: 500, cursor: 'pointer',
-              fontFamily: "'DM Sans Variable', sans-serif",
+              fontFamily: 'var(--font-sans)',
               transition: 'background 0.15s, border-color 0.15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
@@ -459,8 +445,8 @@ export default function LandingPage() {
             {[
               { value: '247', label: 'missing keys caught', color: 'var(--danger)' },
               { value: '12',  label: 'locales tracked',     color: 'var(--accent)' },
-              { value: '~0s', label: 'webhook latency',     color: 'var(--blue)'   },
-              { value: '10×', label: 'quality metrics',     color: 'var(--warning)'},
+              { value: '1',   label: 'draft fix PR click',  color: 'var(--blue)'   },
+              { value: 'live', label: 'production incidents', color: 'var(--warning)'},
             ].map((s, i) => (
               <div key={s.label} style={{ display: 'flex', alignItems: 'center' }}>
                 {i > 0 && <div style={{ width: 1, height: 32, background: 'var(--border)', margin: '0 36px' }} />}
@@ -516,10 +502,10 @@ export default function LandingPage() {
               Translation operations
             </div>
             <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 42px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: 12, maxWidth: 760 }}>
-              One release surface for coverage, quality, and PR checks
+              Scan diffs, draft fix PRs, and production incident signals in one flow
             </h2>
             <p style={{ color: 'var(--text-2)', fontSize: 16, maxWidth: 620, lineHeight: 1.7 }}>
-              Monitor locale coverage, translation quality, and merge risk without switching tools.
+              Use the main dashboard for current health, then move into dedicated routes for scan diff and the runtime SDK when you need action.
             </p>
           </div>
         </RevealSection>
@@ -546,12 +532,12 @@ export default function LandingPage() {
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div className="landing-feature-panel-top">
                   <div style={{ maxWidth: 420 }}>
-                    <div className="tag tag-accent repo-chip" style={{ marginBottom: 14 }}>Release surface</div>
+                    <div className="tag tag-accent repo-chip" style={{ marginBottom: 14 }}>Scan diff + autofix</div>
                     <h3 style={{ fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 12, color: DARK_PANEL_TEXT }}>
-                      Prioritize the modules that need work first.
+                      Diff each scan and route straight into a fix PR.
                     </h3>
                     <p style={{ fontSize: 14, color: DARK_PANEL_MUTED, lineHeight: 1.7 }}>
-                      Rank modules by coverage risk and review state, then move into the dashboard for the full locale matrix.
+                      Every new baseline is compared against the last one, ranked by regression severity, and ready to open as a draft GitHub fix PR.
                     </p>
                   </div>
 
@@ -614,10 +600,10 @@ export default function LandingPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
                     <span className="status-live" />
                     <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_MUTED }}>
-                      active release lanes
+                      latest scan diff
                     </span>
-                    <span className="tag tag-neutral repo-chip" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>4 hotspots</span>
-                    <span className="tag tag-neutral repo-chip" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>live priorities</span>
+                    <span className="tag tag-neutral repo-chip" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>2 regressions</span>
+                    <span className="tag tag-neutral repo-chip" style={{ color: DARK_PANEL_DIM, background: 'rgba(148,163,184,0.08)', borderColor: 'rgba(148,163,184,0.16)' }}>draft PR ready</span>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -723,7 +709,7 @@ export default function LandingPage() {
                       ))}
                     </div>
                     <div style={{ fontSize: 11, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace' }}>
-                      Full locale matrix stays in the dashboard
+                      Full scan diff opens as a dedicated workflow
                     </div>
                   </div>
                 </div>
@@ -801,17 +787,17 @@ export default function LandingPage() {
                 }}
               >
                 <div className="tag repo-chip" style={{ marginBottom: 14, background: 'rgba(255,107,53,0.12)', borderColor: 'rgba(255,107,53,0.22)', color: 'var(--orange)' }}>
-                  PR gate checks
+                  Production incident SDK
                 </div>
                 <h3 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 10, color: DARK_PANEL_TEXT }}>
-                  Block risky localization changes at merge time.
+                  Catch broken translations after deploy, not after tweets.
                 </h3>
                 <p style={{ fontSize: 14, color: DARK_PANEL_MUTED, lineHeight: 1.7, marginBottom: 20 }}>
-                  Each push gets scored against coverage, missing keys, and translation quality before it lands.
+                  Drop a small SDK into any app, including plain HTML and JavaScript, and report raw keys, placeholder leaks, and fallback copy from production traffic.
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {PR_ACTIVITY.slice(0, 2).map(item => (
+                  {SDK_EVENTS.map(item => (
                     <div
                       key={item.title}
                       style={{
@@ -849,8 +835,9 @@ export default function LandingPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 18 }}>
-                  <span className="tag tag-danger repo-chip">merge block</span>
-                  <span className="tag tag-accent repo-chip">quality check</span>
+                  <span className="tag tag-danger repo-chip">raw key</span>
+                  <span className="tag tag-warning repo-chip">placeholder leak</span>
+                  <span className="tag tag-accent repo-chip">fallback copy</span>
                 </div>
               </div>
             </RevealSection>
@@ -1012,7 +999,7 @@ export default function LandingPage() {
                   padding: '14px 40px', borderRadius: 10,
                   background: 'var(--accent)', border: 'none',
                   color: '#070B14', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: "'DM Sans Variable', sans-serif",
+                  fontFamily: 'var(--font-sans)',
                   boxShadow: '0 0 40px rgba(0,229,160,0.25)',
                   transition: 'opacity 0.15s, transform 0.15s, box-shadow 0.15s',
                 }}
@@ -1048,7 +1035,7 @@ export default function LandingPage() {
                   padding: '13px 32px', borderRadius: 10,
                   background: 'var(--accent)', border: 'none',
                   color: '#070B14', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: "'DM Sans Variable', sans-serif",
+                  fontFamily: 'var(--font-sans)',
                   transition: 'opacity 0.15s, transform 0.15s',
                   boxShadow: '0 0 32px rgba(0,229,160,0.3)',
                 }}
@@ -1063,7 +1050,7 @@ export default function LandingPage() {
                   padding: '13px 28px', borderRadius: 10,
                   background: 'transparent', border: '1px solid var(--border-bright)',
                   color: 'var(--text-1)', fontSize: 14, cursor: 'pointer',
-                  fontFamily: "'DM Sans Variable', sans-serif",
+                  fontFamily: 'var(--font-sans)',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}

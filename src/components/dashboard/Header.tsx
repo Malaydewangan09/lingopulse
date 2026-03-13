@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { RefreshCw, GitBranch, ChevronDown, Bell, ExternalLink, Sun, Moon } from 'lucide-react';
-import type { RepoInfo } from '@/lib/types';
+import { RefreshCw, GitBranch, ChevronDown, ExternalLink, Sun, Moon, GitCompareArrows, CheckCircle2, ShieldAlert, TriangleAlert, Code2 } from 'lucide-react';
+import type { RepoInfo, ScanDiffSummary } from '@/lib/types';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 function ThemeToggle() {
   const [dark, setDark] = useState(true);
@@ -40,7 +40,12 @@ function ThemeToggle() {
   );
 }
 
-interface HeaderProps { repo: RepoInfo; onRefresh?: () => Promise<void>; refreshing?: boolean; }
+interface HeaderProps {
+  repo: RepoInfo;
+  scanDiff?: ScanDiffSummary | null;
+  onRefresh?: () => Promise<void>;
+  refreshing?: boolean;
+}
 
 function formatAnalyzedLabel(value: string) {
   const date = new Date(value);
@@ -57,10 +62,41 @@ function formatAnalyzedLabel(value: string) {
   return `${diffDays}d ago`;
 }
 
-export default function Header({ repo, onRefresh, refreshing: externalRefreshing }: HeaderProps) {
+function getDiffTone(status: 'safe' | 'watch' | 'blocked') {
+  if (status === 'safe') {
+    return {
+      background: 'rgba(63,200,122,0.14)',
+      border: 'rgba(63,200,122,0.26)',
+      color: 'var(--success)',
+      icon: <CheckCircle2 size={12} />,
+    };
+  }
+
+  if (status === 'blocked') {
+    return {
+      background: 'rgba(240,82,72,0.14)',
+      border: 'rgba(240,82,72,0.26)',
+      color: 'var(--danger)',
+      icon: <ShieldAlert size={12} />,
+    };
+  }
+
+  return {
+    background: 'rgba(230,168,23,0.14)',
+    border: 'rgba(230,168,23,0.26)',
+    color: 'var(--warning)',
+    icon: <TriangleAlert size={12} />,
+  };
+}
+
+export default function Header({ repo, scanDiff, onRefresh, refreshing: externalRefreshing }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [localRefreshing, setLocalRefreshing] = useState(false);
   const refreshing = externalRefreshing ?? localRefreshing;
+  const onDiffPage = pathname?.endsWith('/diff');
+  const onSdkPage = pathname?.endsWith('/sdk');
+  const diffTone = getDiffTone(scanDiff?.status ?? 'watch');
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -79,8 +115,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
   return (
     <header style={{
       position: 'sticky', top: 0, zIndex: 50,
-      background: 'color-mix(in srgb, var(--bg) 90%, transparent)',
-      backdropFilter: 'blur(16px)',
+      background: 'var(--bg)',
       borderBottom: '1px solid var(--border)',
       padding: '0 24px',
     }}>
@@ -90,7 +125,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 8 }}>
           <div style={{
             width: 30, height: 30, borderRadius: 8,
-            background: 'linear-gradient(135deg, var(--accent) 0%, #00B87A 100%)',
+            background: 'var(--accent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
@@ -100,7 +135,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
               <path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke="#070B14" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </div>
-          <span style={{ fontFamily: 'DM Mono, monospace', fontWeight: 500, fontSize: 15, color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: 15, color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
             lingo<span style={{ color: 'var(--accent)' }}>pulse</span>
           </span>
         </div>
@@ -120,10 +155,10 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
         >
           <div style={{
             width: 18, height: 18, borderRadius: 4,
-            background: 'linear-gradient(135deg, #4B9EFF 0%, #00E5A0 100%)',
+            background: 'var(--blue)',
             flexShrink: 0,
           }} />
-          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13 }}>{repo.fullName}</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500 }}>{repo.fullName}</span>
           <ChevronDown size={13} color="var(--text-2)" />
         </button>
 
@@ -138,7 +173,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
           onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
         >
           <GitBranch size={12} />
-          <span style={{ fontFamily: 'DM Mono, monospace' }}>{repo.defaultBranch}</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{repo.defaultBranch}</span>
           <ChevronDown size={12} />
         </button>
 
@@ -157,7 +192,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
         )}
 
         {/* Last analyzed */}
-        <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }}>
           {refreshing ? 'analyzing…' : `analyzed ${analyzedLabel}`}
         </span>
 
@@ -183,15 +218,76 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
         </button>
 
         <button
+          onClick={() => router.push(onDiffPage ? `/repo/${repo.id}` : `/repo/${repo.id}/diff`)}
+          title={onDiffPage ? 'Back to dashboard' : 'Open scan diff'}
           style={{
-            width: 32, height: 32, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'var(--card)', border: '1px solid var(--border)',
-            color: 'var(--text-2)', cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s',
+            height: 34, minWidth: 108, padding: '0 14px', borderRadius: 9,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 7,
+            background: onDiffPage ? 'var(--surface)' : 'var(--card)',
+            border: `1px solid ${onDiffPage ? 'var(--border-bright)' : diffTone.border}`,
+            color: onDiffPage ? 'var(--text-1)' : diffTone.color,
+            cursor: 'pointer',
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s',
+            fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 600,
+            boxShadow: 'none',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            if (onDiffPage) {
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--border-bright)';
+              e.currentTarget.style.background = 'var(--card)';
+            } else {
+              e.currentTarget.style.borderColor = diffTone.color;
+              e.currentTarget.style.background = 'var(--surface)';
+            }
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            if (onDiffPage) {
+              e.currentTarget.style.color = 'var(--text-1)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.background = 'var(--surface)';
+            } else {
+              e.currentTarget.style.borderColor = diffTone.border;
+            }
+          }}
         >
-          <Bell size={14} />
+          {onDiffPage ? <GitCompareArrows size={12} /> : diffTone.icon}
+          {onDiffPage ? 'dashboard' : 'scan diff'}
+        </button>
+
+        <button
+          style={{
+            height: 34, minWidth: 84, padding: '0 12px', borderRadius: 9,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            background: onSdkPage ? 'var(--surface)' : 'var(--card)',
+            border: `1px solid ${onSdkPage ? 'var(--border-bright)' : 'color-mix(in srgb, var(--blue) 26%, transparent)'}`,
+            color: onSdkPage ? 'var(--accent)' : 'var(--blue)',
+            cursor: 'pointer',
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s',
+            fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 600,
+            boxShadow: 'none',
+          }}
+          onClick={() => router.push(onSdkPage ? `/repo/${repo.id}` : `/repo/${repo.id}/sdk`)}
+          onMouseEnter={e => {
+            if (!onSdkPage) {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--blue) 44%, transparent)';
+              e.currentTarget.style.background = 'var(--surface)';
+            }
+          }}
+          onMouseLeave={e => {
+            if (!onSdkPage) {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--blue) 26%, transparent)';
+              e.currentTarget.style.background = 'var(--card)';
+            }
+          }}
+        >
+          <Code2 size={13} />
+          sdk
         </button>
 
         <a
@@ -218,7 +314,7 @@ export default function Header({ repo, onRefresh, refreshing: externalRefreshing
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'var(--card)', border: '1px solid var(--border)',
             color: 'var(--text-2)', cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s',
-            fontFamily: 'DM Mono, monospace', fontSize: 11,
+            fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 500,
           }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}

@@ -41,7 +41,7 @@ export default function AuthPageClient({ nextPath, initialError = '' }: Props) {
         provider,
         options: {
           redirectTo,
-          scopes: provider === 'github' ? 'read:user user:email repo read:org' : undefined,
+          scopes: provider === 'github' ? 'read:user user:email repo read:org admin:repo_hook' : undefined,
         },
       });
 

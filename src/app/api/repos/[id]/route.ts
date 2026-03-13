@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { computeScanDiff, snapshotFromStoredMetrics } from '@/lib/diff';
+import type { DraftFixResult } from '@/lib/types';
 
 // DELETE /api/repos/[id]  —  disconnect & remove a repo
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -78,6 +80,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       prChecks: [],
       history: [],
       historyLocales: [],
+      scanDiff: null,
+      latestDraftFix: null,
+      incidents: [],
     });
   }
 
@@ -96,6 +101,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         .eq('run_id', previousRun.id)
     : null;
   const previousLocales = previousLocaleQuery?.data ?? [];
+  const previousFileQuery = previousRun
+    ? await db
+        .from('file_metrics')
+        .select('locale, file_path, coverage, missing_keys')
+        .eq('run_id', previousRun.id)
+    : null;
+  const previousFileMetrics = previousFileQuery?.data ?? [];
 
   // File metrics for latest run
   const { data: fileMetrics } = await db
@@ -110,6 +122,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .eq('repo_id', id)
     .order('created_at', { ascending: false })
     .limit(20);
+
+  const latestDraftFix = (activity ?? []).find(event => {
+    const payload = event.raw_payload as { kind?: string } | null;
+    return payload?.kind === 'draft_fix_pr';
+  })?.raw_payload as { draftFix?: DraftFixResult } | undefined;
+
+  const { data: incidents } = await db
+    .from('translation_incidents')
+    .select('*')
+    .eq('repo_id', id)
+    .eq('status', 'open')
+    .order('last_seen_at', { ascending: false })
+    .limit(6);
 
   // PR checks (last 10)
   const { data: prChecks } = await db
@@ -135,6 +160,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         .in('run_id', historyRunIds)
     : null;
   const historyLocales = historyLocaleQuery?.data ?? [];
+  const scanDiff = computeScanDiff(
+    snapshotFromStoredMetrics(latestRun, locales ?? [], fileMetrics ?? []),
+    previousRun ? snapshotFromStoredMetrics(previousRun, previousLocales, previousFileMetrics) : null,
+  );
 
   return NextResponse.json({
     repo,
@@ -147,5 +176,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     prChecks,
     history,
     historyLocales,
+    scanDiff,
+    latestDraftFix: latestDraftFix?.draftFix ?? null,
+    incidents: incidents ?? [],
   });
 }

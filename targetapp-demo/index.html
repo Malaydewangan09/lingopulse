@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Target App Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="eyebrow">Target App Demo</div>
+        <h1>Static app wired to Lingo Pulse</h1>
+        <p>
+          This page simulates real translation failures from a plain HTML, CSS,
+          and JavaScript app using your live Lingo Pulse config.
+        </p>
+      </section>
+
+      <section class="panel status-panel">
+        <div class="panel-header">
+          <h2>Lingo Pulse Connection</h2>
+          <span id="sdk-status" class="status-chip status-idle">loading</span>
+        </div>
+        <dl class="config-grid">
+          <div>
+            <dt>Repo ID</dt>
+            <dd>ec1fc1f2-88dd-4b85-a001-35a5c455d13c</dd>
+          </div>
+          <div>
+            <dt>Ingest Key</dt>
+            <dd>b6bfcb97952de68b326092edc5554adc2141</dd>
+          </div>
+          <div>
+            <dt>API Base</dt>
+            <dd>http://localhost:3000</dd>
+          </div>
+          <div>
+            <dt>App Version</dt>
+            <dd>static-site@1.0.0</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="content-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Translation Preview</h2>
+            <span id="active-locale" class="meta-chip">ja</span>
+          </div>
+
+          <div class="preview-card">
+            <div class="preview-label">checkout CTA</div>
+            <div id="preview-value" class="preview-value">今すぐ支払う</div>
+            <div id="preview-note" class="preview-note">
+              Healthy translation. No incident should be reported.
+            </div>
+          </div>
+
+          <div class="control-stack">
+            <div class="button-row">
+              <button data-action="healthy">Healthy copy</button>
+              <button data-action="raw-key">Raw key leak</button>
+            </div>
+            <div class="button-row">
+              <button data-action="placeholder">Placeholder leak</button>
+              <button data-action="fallback">Fallback copy</button>
+            </div>
+            <div class="button-row">
+              <button data-action="empty">Empty translation</button>
+              <button data-action="clear-log" class="ghost">Clear local log</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>How To Test</h2>
+          </div>
+
+          <ol class="steps">
+            <li>Keep your Lingo Pulse app running on <code>http://localhost:3000</code>.</li>
+            <li>Open this file in the browser.</li>
+            <li>Click <code>Raw key leak</code> or <code>Placeholder leak</code>.</li>
+            <li>Refresh the repo dashboard and check <code>Live Incidents</code>.</li>
+          </ol>
+
+          <div class="snippet">
+            <div class="snippet-title">Runtime path</div>
+            <code>window.LingoPulse -> inspect() -> /api/incidents/report</code>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Local Event Log</h2>
+          <span id="last-result" class="meta-chip">waiting</span>
+        </div>
+        <div id="event-log" class="event-log"></div>
+      </section>
+    </main>
+
+    <script src="http://localhost:3000/lingopulse-browser.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
