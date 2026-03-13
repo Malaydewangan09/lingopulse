@@ -49,7 +49,7 @@ export default function LiveIncidentsPanel({
   compact = false,
 }: Props) {
   const router = useRouter();
-  const apiBase = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const apiBase = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
   const sdkSnippet = `const pulse = new LingoPulse({ repoId: '${repoId}', ingestKey: '${ingestKey ?? 'repo_ingest_key'}', apiBase: '${apiBase}' })`;
   const panelBorder = '1px solid var(--border)';
   const panelBackground = 'var(--card)';

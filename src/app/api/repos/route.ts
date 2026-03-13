@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
+
+export const maxDuration = 60; // extend Vercel timeout to 60s (Pro) — prevents analysis being killed
 import { supabaseAdmin } from '@/lib/supabase';
 import { createOrUpdatePullRequestComment, getRepoInfo, registerWebhook } from '@/lib/github';
 import { fetchI18nFiles } from '@/lib/github';

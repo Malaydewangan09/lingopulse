@@ -93,10 +93,19 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
   const router = useRouter();
   const pathname = usePathname();
   const [localRefreshing, setLocalRefreshing] = useState(false);
+  const [navigating, setNavigating] = useState<'diff' | 'sdk' | null>(null);
   const refreshing = externalRefreshing ?? localRefreshing;
   const onDiffPage = pathname?.endsWith('/diff');
   const onSdkPage = pathname?.endsWith('/sdk');
   const diffTone = getDiffTone(scanDiff?.status ?? 'watch');
+
+  const handleNav = (target: 'diff' | 'sdk') => {
+    setNavigating(target);
+    const path = target === 'sdk'
+      ? (onSdkPage ? `/repo/${repo.id}` : `/repo/${repo.id}/sdk`)
+      : (onDiffPage ? `/repo/${repo.id}` : `/repo/${repo.id}/diff`);
+    router.push(path);
+  };
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -218,21 +227,23 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
         </button>
 
         <button
-          onClick={() => router.push(onDiffPage ? `/repo/${repo.id}` : `/repo/${repo.id}/diff`)}
+          onClick={() => handleNav('diff')}
+          disabled={navigating === 'diff'}
           title={onDiffPage ? 'Back to dashboard' : 'Open scan diff'}
           style={{
             height: 34, minWidth: 108, padding: '0 14px', borderRadius: 9,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 7,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             background: onDiffPage ? 'var(--surface)' : 'var(--card)',
             border: `1px solid ${onDiffPage ? 'var(--border-bright)' : diffTone.border}`,
             color: onDiffPage ? 'var(--text-1)' : diffTone.color,
-            cursor: 'pointer',
-            transition: 'color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s',
+            cursor: navigating === 'diff' ? 'default' : 'pointer',
+            opacity: navigating === 'diff' ? 0.6 : 1,
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s, opacity 0.15s',
             fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 600,
             boxShadow: 'none',
           }}
           onMouseEnter={e => {
+            if (navigating) return;
             e.currentTarget.style.transform = 'translateY(-1px)';
             if (onDiffPage) {
               e.currentTarget.style.color = 'var(--accent)';
@@ -254,39 +265,45 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
             }
           }}
         >
-          {onDiffPage ? <GitCompareArrows size={12} /> : diffTone.icon}
+          {navigating === 'diff'
+            ? <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3"/><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            : (onDiffPage ? <GitCompareArrows size={12} /> : diffTone.icon)
+          }
           {onDiffPage ? 'dashboard' : 'scan diff'}
         </button>
 
         <button
+          onClick={() => handleNav('sdk')}
+          disabled={navigating === 'sdk'}
           style={{
             height: 34, minWidth: 84, padding: '0 12px', borderRadius: 9,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             background: onSdkPage ? 'var(--surface)' : 'var(--card)',
             border: `1px solid ${onSdkPage ? 'var(--border-bright)' : 'color-mix(in srgb, var(--blue) 26%, transparent)'}`,
             color: onSdkPage ? 'var(--accent)' : 'var(--blue)',
-            cursor: 'pointer',
-            transition: 'color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s',
+            cursor: navigating === 'sdk' ? 'default' : 'pointer',
+            opacity: navigating === 'sdk' ? 0.6 : 1,
+            transition: 'color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s, opacity 0.15s',
             fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 600,
             boxShadow: 'none',
           }}
-          onClick={() => router.push(onSdkPage ? `/repo/${repo.id}` : `/repo/${repo.id}/sdk`)}
           onMouseEnter={e => {
-            if (!onSdkPage) {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--blue) 44%, transparent)';
-              e.currentTarget.style.background = 'var(--surface)';
-            }
+            if (navigating || onSdkPage) return;
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--blue) 44%, transparent)';
+            e.currentTarget.style.background = 'var(--surface)';
           }}
           onMouseLeave={e => {
-            if (!onSdkPage) {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--blue) 26%, transparent)';
-              e.currentTarget.style.background = 'var(--card)';
-            }
+            if (onSdkPage) return;
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--blue) 26%, transparent)';
+            e.currentTarget.style.background = 'var(--card)';
           }}
         >
-          <Code2 size={13} />
+          {navigating === 'sdk'
+            ? <svg width="12" height="12" viewBox="0 0 12 12" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3"/><path d="M6 1.5a4.5 4.5 0 0 1 4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            : <Code2 size={13} />
+          }
           sdk
         </button>
 

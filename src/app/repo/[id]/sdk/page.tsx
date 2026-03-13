@@ -241,7 +241,7 @@ export default function RepoSdkPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
 
   const snippets = useMemo(() => {
     const repoId = data?.repo.id ?? 'repo-id';

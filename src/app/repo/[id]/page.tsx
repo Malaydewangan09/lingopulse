@@ -371,10 +371,13 @@ export default function RepoDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Poll fast (5s) while no analysis data yet, then slow down to 30s
+  const hasRuns = (data?.runs?.length ?? 0) > 0;
   useEffect(() => {
-    const timer = setInterval(load, 30_000);
+    const interval = hasRuns ? 30_000 : 5_000;
+    const timer = setInterval(load, interval);
     return () => clearInterval(timer);
-  }, [load]);
+  }, [load, hasRuns]);
 
   useEffect(() => {
     if (activeSection === 'overview') setWorkspaceTab('coverage');
