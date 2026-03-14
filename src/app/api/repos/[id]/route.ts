@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { computeScanDiff, snapshotFromStoredMetrics } from '@/lib/diff';
+import { getPullRequest } from '@/lib/github';
 import type { DraftFixResult } from '@/lib/types';
 
 // DELETE /api/repos/[id]  —  disconnect & remove a repo
@@ -62,6 +63,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .from('analysis_runs')
     .select('*')
     .eq('repo_id', id)
+    .eq('branch', repo.default_branch)
+    .neq('triggered_by', 'pr')
     .order('created_at', { ascending: false })
     .limit(2);
 
@@ -123,10 +126,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .order('created_at', { ascending: false })
     .limit(20);
 
-  const latestDraftFix = (activity ?? []).find(event => {
+  const latestDraftFixEvent = (activity ?? []).find(event => {
     const payload = event.raw_payload as { kind?: string } | null;
     return payload?.kind === 'draft_fix_pr';
-  })?.raw_payload as { draftFix?: DraftFixResult } | undefined;
+  });
+  let latestDraftFix: (DraftFixResult & { isMerged?: boolean }) | null = null;
+
+  if (latestDraftFixEvent) {
+    const draftFixData = latestDraftFixEvent.raw_payload as { draftFix?: DraftFixResult } | undefined;
+    if (draftFixData?.draftFix) {
+      const prNumber = draftFixData.draftFix.prNumber;
+      try {
+        const pr = await getPullRequest(repo.full_name, prNumber, repo.github_token);
+        latestDraftFix = {
+          ...draftFixData.draftFix,
+          isMerged: pr?.merged ?? false,
+        };
+      } catch {
+        latestDraftFix = { ...draftFixData.draftFix, isMerged: false };
+      }
+    }
+  }
 
   const { data: incidents } = await db
     .from('translation_incidents')
@@ -149,6 +169,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .from('analysis_runs')
     .select('id, overall_coverage, quality_score, missing_keys, created_at')
     .eq('repo_id', id)
+    .eq('branch', repo.default_branch)
+    .neq('triggered_by', 'pr')
     .order('created_at', { ascending: true })
     .limit(30);
 
@@ -177,7 +199,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     history,
     historyLocales,
     scanDiff,
-    latestDraftFix: latestDraftFix?.draftFix ?? null,
+    latestDraftFix,
     incidents: incidents ?? [],
   });
 }

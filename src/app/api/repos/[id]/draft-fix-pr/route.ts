@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
-    const status = /No missing keys|No target locales|No i18n files|GitHub token missing/i.test(message) ? 422 : 500;
+    const status = /No missing keys|No target locales|No i18n files|GitHub token missing|Lingo\.dev/i.test(message) ? 422 : 500;
     return NextResponse.json({
       error: message,
     }, { status });

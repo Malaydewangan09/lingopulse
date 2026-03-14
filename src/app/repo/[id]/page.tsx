@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { GitPullRequest, Sparkles } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
 import CoverageHeatmap from '@/components/dashboard/CoverageHeatmap';
 import QualityChart from '@/components/dashboard/QualityChart';
@@ -8,6 +9,10 @@ import LocaleBreakdown from '@/components/dashboard/LocaleBreakdown';
 import PRChecks from '@/components/dashboard/PRChecks';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LiveIncidentsPanel from '@/components/dashboard/LiveIncidentsPanel';
+import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
+import { derivePrCheckStatus } from '@/lib/pr-checks';
+import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
+import { LOCALE_STATS, generateHeatmapData, ACTIVITY, PR_CHECKS, QUALITY_HISTORY, COVERAGE_HISTORY } from '@/lib/mock-data';
 import type {
   ActivityEvent,
   CoverageDataPoint,
@@ -255,8 +260,14 @@ function summarizePRCheck(check: PRCheckRow): string {
   const coverageAfter = toNumber(check.coverage_after);
   const delta = round1(coverageAfter - coverageBefore);
   const missingKeys = Math.round(toNumber(check.missing_keys));
+  const status = derivePrCheckStatus({
+    coverageBefore,
+    coverageAfter,
+    missingKeys,
+    existingStatus: check.status,
+  });
 
-  if (check.status === 'failing') {
+  if (status === 'failing') {
     if (delta < 0 && missingKeys > 0) {
       return `Coverage dropped ${Math.abs(delta).toFixed(1)} pts and ${missingKeys} missing keys still need fixes.`;
     }
@@ -266,11 +277,14 @@ function summarizePRCheck(check: PRCheckRow): string {
     return `${missingKeys} missing keys are blocking merge.`;
   }
 
-  if (check.status === 'warning') {
+  if (status === 'warning') {
     if (delta < 0) {
       return `Coverage softened by ${Math.abs(delta).toFixed(1)} pts. Review the touched locale files before merge.`;
     }
-    return `${missingKeys} missing keys remain in the current PR snapshot.`;
+    if (missingKeys > 0) {
+      return `${missingKeys} missing keys remain in the current PR snapshot.`;
+    }
+    return 'Review the touched locale files before merge.';
   }
 
   if (missingKeys > 0) {
@@ -298,20 +312,32 @@ function buildLiveIncidents(incidents: IncidentRow[]): TranslationIncident[] {
 }
 
 function buildPRChecks(checks: PRCheckRow[], repoFullName: string): PRCheck[] {
-  return checks.map(check => ({
-    id: check.id,
-    prNumber: Math.round(toNumber(check.pr_number)),
-    title: check.pr_title ?? '',
-    author: check.author ?? '',
-    branch: check.branch ?? '',
-    status: check.status,
-    coverageBefore: toNumber(check.coverage_before),
-    coverageAfter: toNumber(check.coverage_after),
-    missingKeys: Math.round(toNumber(check.missing_keys)),
-    timestamp: formatRelativeTime(check.updated_at ?? check.created_at),
-    summary: summarizePRCheck(check),
-    prUrl: `https://github.com/${repoFullName}/pull/${Math.round(toNumber(check.pr_number))}`,
-  }));
+  return checks.map(check => {
+    const coverageBefore = toNumber(check.coverage_before);
+    const coverageAfter = toNumber(check.coverage_after);
+    const missingKeys = Math.round(toNumber(check.missing_keys));
+    const status = derivePrCheckStatus({
+      coverageBefore,
+      coverageAfter,
+      missingKeys,
+      existingStatus: check.status,
+    });
+
+    return {
+      id: check.id,
+      prNumber: Math.round(toNumber(check.pr_number)),
+      title: check.pr_title ?? '',
+      author: check.author ?? '',
+      branch: check.branch ?? '',
+      status,
+      coverageBefore,
+      coverageAfter,
+      missingKeys,
+      timestamp: formatRelativeTime(check.updated_at ?? check.created_at),
+      summary: summarizePRCheck(check),
+      prUrl: `https://github.com/${repoFullName}/pull/${Math.round(toNumber(check.pr_number))}`,
+    };
+  });
 }
 
 function buildChartData(history: AnalysisRunRow[], historyLocales: HistoryLocaleRow[]): { quality: QualityDataPoint[]; coverage: CoverageDataPoint[] } {
@@ -346,8 +372,10 @@ function buildChartData(history: AnalysisRunRow[], historyLocales: HistoryLocale
 
 export default function RepoDashboard() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const isDemo = id === 'demo';
+
+  const [data, setData] = useState<DashboardData | null>(() => isDemo ? null : peekRepoData<DashboardData>(id));
+  const [loading, setLoading] = useState(() => isDemo ? true : !peekRepoData<DashboardData>(id));
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState('');
@@ -356,26 +384,141 @@ export default function RepoDashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [workspaceTab, setWorkspaceTab] = useState<'coverage' | 'locales' | 'prchecks' | 'trends'>('coverage');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options: { force?: boolean } = {}) => {
+    if (isDemo) {
+      const heatmapData = generateHeatmapData();
+      const localeMetrics: LocaleMetricRow[] = LOCALE_STATS.map(l => ({
+        locale: l.locale,
+        locale_name: l.name,
+        flag: l.flag,
+        coverage: Number(l.coverage),
+        quality_score: Number(l.qualityScore),
+        missing_keys: Number(l.missingKeys),
+        total_keys: Number(l.totalKeys),
+        translated_keys: Number(l.translatedKeys),
+      }));
+      const demoData: DashboardData = {
+        repo: {
+          id: 'demo',
+          name: 'demo-app',
+          full_name: 'demo/demo-app',
+          owner: 'demo',
+          default_branch: 'main',
+          updated_at: new Date().toISOString(),
+        },
+        latestRun: {
+          id: 'demo-run',
+          created_at: new Date().toISOString(),
+          overall_coverage: 78.4,
+          quality_score: 8.2,
+          missing_keys: LOCALE_STATS.reduce((sum, l) => sum + (l.missingKeys || 0), 0),
+          active_locales: LOCALE_STATS.length,
+          total_locales: 15,
+        },
+        previousRun: {
+          id: 'demo-prev',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          overall_coverage: 77.1,
+          quality_score: 8.0,
+          missing_keys: LOCALE_STATS.reduce((sum, l) => sum + Math.round((l.missingKeys || 0) * 1.05), 0),
+          active_locales: LOCALE_STATS.length,
+          total_locales: 15,
+        },
+        locales: localeMetrics,
+        previousLocales: localeMetrics.map(l => ({ ...l, coverage: Math.max(0, Number(l.coverage ?? 100) - 2) })),
+        fileMetrics: heatmapData.map(h => ({
+          locale: h.locale,
+          file_path: h.file,
+          coverage: h.coverage,
+          missing_keys: h.missingKeys,
+          total_keys: h.totalKeys,
+        })),
+        activity: ACTIVITY.slice(0, 6).map(a => ({
+          id: a.id,
+          type: a.type,
+          branch: a.branch ?? null,
+          author: a.author ?? null,
+          message: a.message ?? null,
+          created_at: new Date().toISOString(),
+          coverage_delta: a.coverageDelta ?? 0,
+          locales_affected: a.localesAffected ?? null,
+        })),
+        prChecks: PR_CHECKS.map(p => ({
+          id: p.id,
+          pr_number: p.prNumber,
+          pr_title: p.title,
+          author: p.author,
+          branch: p.branch,
+          status: p.status,
+          coverage_before: p.coverageBefore,
+          coverage_after: p.coverageAfter,
+          missing_keys: p.missingKeys,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })),
+        history: COVERAGE_HISTORY.map((h, i) => ({
+          id: `hist-${i}`,
+          created_at: new Date(Date.now() - (29 - i) * 86400000).toISOString(),
+          overall_coverage: h.coverage,
+          quality_score: QUALITY_HISTORY[i]?.overall ?? 8,
+          missing_keys: h.missingKeys,
+          active_locales: 12,
+          total_locales: 15,
+        })),
+        historyLocales: QUALITY_HISTORY.flatMap((q, runIdx) =>
+          LOCALE_STATS.slice(0, 5).map(l => ({
+            run_id: `hist-${runIdx}`,
+            locale: l.locale,
+            coverage: (LOCALE_STATS.find(ls => ls.locale === l.locale)?.coverage ?? 100) - runIdx * 0.1,
+            quality_score: q[l.locale] ?? 8,
+          }))
+        ),
+        scanDiff: {
+          hasBaseline: true,
+          status: 'watch',
+          headline: 'Translation drift detected in the latest scan',
+          summary: '44 missing keys at 95.4% coverage. Japanese and Arabic locales need attention.',
+          recommendation: 'Run a draft fix PR to address the missing keys.',
+          coverageDelta: 0.0,
+          qualityDelta: -0.1,
+          missingKeysDelta: 0,
+          totalMissingKeys: 44,
+          regressedLocales: [
+            { key: 'ja', label: 'Japanese', currentCoverage: 89.0, currentMissingKeys: 15, coverageDelta: -1.2, missingDelta: 8 },
+            { key: 'ar', label: 'Arabic', currentCoverage: 82.3, currentMissingKeys: 21, coverageDelta: -0.8, missingDelta: 5 },
+          ],
+          improvedLocales: [
+            { key: 'es', label: 'Spanish', currentCoverage: 97.1, currentMissingKeys: 4, coverageDelta: 1.5, missingDelta: -12 },
+          ],
+          regressedModules: [],
+          improvedModules: [],
+        },
+        latestDraftFix: null,
+        incidents: [],
+      };
+      setData(demoData);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/repos/${id}`);
-      if (!res.ok) throw new Error(`${res.status}`);
-      setData(await res.json());
+      const next = await fetchRepoDataCached<DashboardData>(id, { force: options.force });
+      setData(next);
       setError('');
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Request failed');
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isDemo]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   // Poll fast (5s) while no analysis data yet, then slow down to 30s
   const hasRuns = data?.latestRun != null;
   useEffect(() => {
     const interval = hasRuns ? 30_000 : 5_000;
-    const timer = setInterval(load, interval);
+    const timer = setInterval(() => { void load({ force: true }); }, interval);
     return () => clearInterval(timer);
   }, [load, hasRuns]);
 
@@ -405,16 +548,15 @@ export default function RepoDashboard() {
 
       for (let attempt = 0; attempt < 15; attempt += 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const status = await fetch(`/api/repos/${id}`);
-        if (!status.ok) break;
-        const fresh = await status.json();
+        const fresh = await fetchRepoDataCached<DashboardData>(id, { force: true });
         if (fresh.latestRun?.id && fresh.latestRun.id !== currentRunId) {
           setData(fresh);
+          setRepoDataCache(id, fresh);
           return;
         }
       }
 
-      await load();
+      await load({ force: true });
     } catch (error: unknown) {
       setRefreshError(error instanceof Error ? error.message : 'Failed to analyze repo');
     } finally {
@@ -436,7 +578,7 @@ export default function RepoDashboard() {
       }
 
       setPrSyncMessage(payload.message ?? 'PR sync complete.');
-      await load();
+      await load({ force: true });
     } catch (nextError: unknown) {
       setPrSyncMessage(nextError instanceof Error ? nextError.message : 'Failed to sync PR checks');
     } finally {
@@ -471,6 +613,60 @@ export default function RepoDashboard() {
       <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Header repo={repo} scanDiff={data.scanDiff} onRefresh={handleRefresh} refreshing={refreshing} />
+
+          {data.latestDraftFix && !data.latestDraftFix.isMerged && (
+            <div
+              style={{
+                margin: '14px 24px 0',
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: data.latestDraftFix.isMerged ? 'rgba(0,229,160,0.12)' : 'rgba(0,229,160,0.08)',
+                border: `1px solid ${data.latestDraftFix.isMerged ? 'rgba(0,229,160,0.35)' : 'rgba(0,229,160,0.2)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <GitPullRequest size={16} style={{ color: data.latestDraftFix.isMerged ? 'var(--success)' : 'var(--accent)', flexShrink: 0 }} />
+                <div style={{ fontSize: 12, color: 'var(--text-1)' }}>
+                  {data.latestDraftFix.isMerged ? (
+                    <span style={{ fontWeight: 600, color: 'var(--success)' }}>Draft fix PR merged</span>
+                  ) : (
+                    <span style={{ fontWeight: 600 }}>Draft fix PR is open</span>
+                  )}
+                  <span style={{ color: 'var(--text-2)' }}> {data.latestDraftFix.keysFilled} keys across {data.latestDraftFix.filesUpdated} files.</span>
+                  {!data.latestDraftFix.isMerged && (
+                    <span style={{ color: 'var(--accent)' }}> Merge it to turn the heatmap green.</span>
+                  )}
+                </div>
+              </div>
+              <a
+                href={data.latestDraftFix.prUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: 'var(--accent)',
+                  textDecoration: 'none',
+                  fontSize: 11,
+                  fontFamily: 'DM Mono, monospace',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '6px 10px',
+                  background: 'var(--card)',
+                  flexShrink: 0,
+                }}
+              >
+                <Sparkles size={12} />
+                view PR
+              </a>
+            </div>
+          )}
 
           <main className="dashboard-main">
             <div
@@ -678,16 +874,10 @@ export default function RepoDashboard() {
 
 function LoadingSkeleton() {
   return (
-    <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
-      <div style={{ height: 56, background: 'var(--card)', borderBottom: '1px solid var(--border)' }} />
-      <div className="dashboard-main">
-        <div className="dashboard-metrics-grid">
-          {[0, 1, 2, 3].map(index => (
-            <div key={index} className="skeleton" style={{ height: 110, borderRadius: 12 }} />
-          ))}
-        </div>
-      </div>
-    </div>
+    <ProductPageLoader
+      title="Loading workspace"
+      subtitle="Fetching the latest repo signals, incidents, and pull request checks."
+    />
   );
 }
 
@@ -702,11 +892,9 @@ function ErrorState({ error }: { error: string }) {
 
 function WaitingForAnalysis() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column', gap: 12 }}>
-      <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 10 }} />
-      <span style={{ color: 'var(--text-2)', fontFamily: 'DM Mono, monospace', fontSize: 13 }}>
-        Analysis in progress… heatmap and trends will populate after the first successful scan
-      </span>
-    </div>
+    <ProductPageLoader
+      title="Running first analysis"
+      subtitle="Scanning locale files and scoring translations. The workspace will unlock after the first successful run."
+    />
   );
 }

@@ -3,21 +3,20 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
 }
 
 export function coverageColor(pct: number): string {
-  if (pct === 0)   return '#1C2B3A';
-  if (pct < 40)    return '#5C1A1A';
-  if (pct < 60)    return '#7A3012';
-  if (pct < 75)    return '#5C4500';
-  if (pct < 88)    return '#1A5C38';
-  if (pct < 96)    return '#0D7A4A';
-  return 'rgba(0,229,160,0.3)';
+  if (pct === 0) return 'var(--coverage-empty)';
+  if (pct < 40) return 'var(--coverage-40)';
+  if (pct < 60) return 'var(--coverage-60)';
+  if (pct < 75) return 'var(--coverage-60)';
+  if (pct < 88) return 'var(--coverage-88)';
+  if (pct < 96) return 'var(--coverage-96)';
+  return 'var(--coverage-100)';
 }
 
 export function coverageTextColor(pct: number): string {
-  if (pct < 40) return '#F87171';
-  if (pct < 60) return '#FB923C';
-  if (pct < 75) return '#FBBF24';
-  if (pct < 88) return '#4ADE80';
-  return '#00E5A0';
+  if (pct < 40) return 'var(--danger)';
+  if (pct < 75) return 'var(--warning)';
+  if (pct < 96) return 'var(--success)';
+  return 'var(--accent)';
 }
 
 export function coverageLabel(pct: number): string {

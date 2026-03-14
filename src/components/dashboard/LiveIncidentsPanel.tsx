@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, RadioTower } from 'lucide-react';
 import SectionHeader from '@/components/dashboard/SectionHeader';
+import { navigateWithTransition } from '@/lib/navigation';
 import type { TranslationIncident } from '@/lib/types';
 
 interface Props {
@@ -63,7 +64,7 @@ export default function LiveIncidentsPanel({
         right={!compact ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <button
-              onClick={() => router.push(`/repo/${repoId}/sdk`)}
+              onClick={() => navigateWithTransition(router, `/repo/${repoId}/sdk`)}
               className="mono-badge mono-badge-sm"
               style={{ color: 'var(--blue)', border: '1px solid color-mix(in srgb, var(--blue) 24%, transparent)', background: 'color-mix(in srgb, var(--blue) 10%, transparent)', cursor: 'pointer' }}
             >

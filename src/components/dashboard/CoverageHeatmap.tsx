@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { coverageColor, coverageLabel } from '@/lib/utils';
+import { coverageColor, coverageLabel, coverageTextColor } from '@/lib/utils';
 import type { FileLocaleCell, LocaleStats } from '@/lib/types';
 import SectionHeader from '@/components/dashboard/SectionHeader';
 
@@ -90,13 +90,13 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
         right={
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {[
-              { label: '0%', color: '#5C1A1A' },
-              { label: '60%', color: '#5C4500' },
-              { label: '88%', color: '#1A5C38' },
-              { label: '100%', color: 'rgba(0,229,160,0.3)' },
+              { label: '0%', color: 'var(--coverage-40)' },
+              { label: '60%', color: 'var(--coverage-60)' },
+              { label: '88%', color: 'var(--coverage-88)' },
+              { label: '100%', color: 'var(--coverage-100)' },
             ].map(({ label, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: color, border: '1px solid rgba(255,255,255,0.06)' }} />
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: color, border: '1px solid var(--border)' }} />
                 <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{label}</span>
               </div>
             ))}
@@ -217,7 +217,7 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
                         minWidth: 0,
                         height: CELL_H,
                         background,
-                        border: '1px solid rgba(255,255,255,0.04)',
+                        border: '1px solid var(--border)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -231,7 +231,7 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: 9,
-                          color: coverage === 0 ? 'var(--text-3)' : 'rgba(255,255,255,0.55)',
+                          color: coverage === 0 ? 'var(--text-3)' : coverageTextColor(coverage),
                         }}
                       >
                         {coverage === 0 ? '—' : `${coverage.toFixed(0)}%`}

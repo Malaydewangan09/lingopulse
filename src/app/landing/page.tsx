@@ -264,7 +264,7 @@ const SCREENSHOT_TABS = [
     label: 'Dashboard',
     tag: 'Coverage map',
     tagColor: 'var(--accent)',
-    description: 'Locale coverage heatmap, quality scores, and live production incidents — all in one view.',
+    description: 'Locale coverage heatmap, quality scores, and live production incidents in one view.',
     src: '/screenshots/dashboard.png',
     alt: 'Lingo Pulse dashboard showing coverage heatmap and live incidents',
   },
@@ -478,29 +478,20 @@ export default function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ThemeToggle />
           <button
-            onClick={goToAuth}
-            disabled={ctaLoading}
+            onClick={() => router.push('/repo/demo')}
             style={{
               height: 40, padding: '0 20px', borderRadius: 10,
               background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)',
               color: 'var(--accent-button-text)', fontSize: 13, fontWeight: 700,
-              cursor: ctaLoading ? 'default' : 'pointer',
-              fontFamily: 'var(--font-sans)',
+              cursor: 'pointer', fontFamily: 'var(--font-sans)',
               display: 'flex', alignItems: 'center', gap: 7,
-              opacity: ctaLoading ? 0.75 : 1,
-              transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
+              transition: 'transform 0.15s, box-shadow 0.15s',
               boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
             }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
           >
-            {ctaLoading && (
-              <svg width="13" height="13" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}>
-                <circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3"/>
-                <path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            )}
-            Start monitoring
+            Try Demo
           </button>
         </div>
       </nav>

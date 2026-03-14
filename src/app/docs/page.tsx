@@ -146,7 +146,7 @@ export default function DocsPage() {
 
           <Section id="overview" title="Overview">
             <P>
-              <strong style={{ color: '#E8F0F7' }}>Lingo Pulse</strong> is an i18n observability dashboard — like Datadog, but for your translation coverage. Connect a GitHub repository, and Lingo Pulse will scan every locale file on every push, score translation quality via the Lingo.dev SDK, and alert you when a language breaks.
+              <strong style={{ color: '#E8F0F7' }}>Lingo Pulse</strong> is an i18n observability dashboard. Like Datadog, but for your translation coverage. Connect a GitHub repository, and Lingo Pulse will scan every locale file on every push, score translation quality via the Lingo.dev SDK, and alert you when a language breaks.
             </P>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
               <Tag>coverage tracking</Tag>
@@ -156,7 +156,7 @@ export default function DocsPage() {
               <Tag color="#FF6B35">incident feed</Tag>
             </div>
             <P>
-              Built on Next.js, Supabase, and the <code style={{ fontFamily: 'DM Mono, monospace', color: '#00E5A0', fontSize: 13 }}>@lingo.dev/_sdk</code> — all open source.
+              Built on Next.js, Supabase, and the <code style={{ fontFamily: 'DM Mono, monospace', color: '#00E5A0', fontSize: 13 }}>@lingo.dev/_sdk</code>. All open source.
             </P>
           </Section>
 
@@ -217,8 +217,8 @@ supabase/migrations/004_translation_incidents.sql`}</Code>
             <H3>Requirements</H3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {[
-                ['GitHub PAT scope', 'admin:repo_hook — needed for automatic registration'],
-                ['Public URL', 'Webhooks require a publicly reachable host — localhost will not work. Deploy to Vercel or use ngrok for local testing.'],
+                ['GitHub PAT scope', 'admin:repo_hook. Needed for automatic registration'],
+                ['Public URL', 'Webhooks require a publicly reachable host. Localhost will not work. Deploy to Vercel or use ngrok for local testing.'],
                 ['Webhook secret', 'Set GITHUB_WEBHOOK_SECRET in your env. The handler validates the X-Hub-Signature-256 header on every request.'],
               ].map(([label, desc]) => (
                 <div key={label} style={{ display: 'flex', gap: 12, padding: '12px 16px', background: '#0F1724', borderRadius: 8, border: '1px solid #1C2B3A' }}>

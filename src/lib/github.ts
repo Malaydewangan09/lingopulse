@@ -325,6 +325,20 @@ export async function upsertRepoFile(
 interface GithubPullRequestResponse {
   html_url: string;
   number: number;
+  merged: boolean;
+  state: string;
+}
+
+export async function getPullRequest(
+  fullName: string,
+  prNumber: number,
+  token: string,
+): Promise<GithubPullRequestResponse | null> {
+  const data = await githubRequest(
+    `https://api.github.com/repos/${fullName}/pulls/${prNumber}`,
+    token,
+  );
+  return (data as GithubPullRequestResponse) ?? null;
 }
 
 export async function createPullRequest(

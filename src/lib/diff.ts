@@ -176,8 +176,6 @@ function compareLocaleSignals(current: AnalysisSnapshot, previous: AnalysisSnaps
     const qualityDelta = round1((currentLocale?.qualityScore ?? 0) - (previousLocale?.qualityScore ?? 0));
     const missingDelta = Math.round((currentLocale?.missingKeys ?? 0) - (previousLocale?.missingKeys ?? 0));
 
-    if (coverageDelta === 0 && qualityDelta === 0 && missingDelta === 0) continue;
-
     const signal: ScanDiffSignal = {
       key: locale,
       label: locale,
@@ -189,19 +187,20 @@ function compareLocaleSignals(current: AnalysisSnapshot, previous: AnalysisSnaps
       currentQualityScore: currentLocale?.qualityScore ?? 0,
     };
 
-    if (coverageDelta < 0 || missingDelta > 0 || qualityDelta < 0) {
+    // Show all locales with missing keys (not just changed ones)
+    if (currentLocale && currentLocale.missingKeys > 0) {
       regressed.push(signal);
-    } else {
+    } else if (currentLocale && currentLocale.missingKeys === 0) {
       improved.push(signal);
     }
   }
 
   const severity = (signal: ScanDiffSignal) =>
-    signal.missingDelta * 4 + Math.max(0, -signal.coverageDelta) * 3 + Math.max(0, -(signal.qualityDelta ?? 0)) * 4;
+    signal.currentMissingKeys * -1; // Sort by most missing keys first
   const gain = (signal: ScanDiffSignal) =>
-    Math.max(0, -signal.missingDelta) * 4 + Math.max(0, signal.coverageDelta) * 3 + Math.max(0, signal.qualityDelta ?? 0) * 4;
+    signal.currentMissingKeys; // Sort by least missing keys first (most complete)
 
-  regressed.sort((a, b) => severity(b) - severity(a) || a.label.localeCompare(b.label));
+  regressed.sort((a, b) => severity(a) - severity(b) || a.label.localeCompare(b.label));
   improved.sort((a, b) => gain(b) - gain(a) || a.label.localeCompare(b.label));
 
   return { regressed, improved };
@@ -224,8 +223,6 @@ function compareModuleSignals(current: AnalysisSnapshot, previous: AnalysisSnaps
     const coverageDelta = round1((currentModule?.coverage ?? 0) - (previousModule?.coverage ?? 0));
     const missingDelta = Math.round((currentModule?.missingKeys ?? 0) - (previousModule?.missingKeys ?? 0));
 
-    if (coverageDelta === 0 && missingDelta === 0) continue;
-
     const signal: ScanDiffSignal = {
       key: moduleName,
       label: moduleName,
@@ -235,17 +232,18 @@ function compareModuleSignals(current: AnalysisSnapshot, previous: AnalysisSnaps
       currentMissingKeys: currentModule?.missingKeys ?? 0,
     };
 
-    if (coverageDelta < 0 || missingDelta > 0) {
+    // Show all modules with missing keys
+    if (currentModule && currentModule.missingKeys > 0) {
       regressed.push(signal);
-    } else {
+    } else if (currentModule && currentModule.missingKeys === 0) {
       improved.push(signal);
     }
   }
 
-  const severity = (signal: ScanDiffSignal) => signal.missingDelta * 4 + Math.max(0, -signal.coverageDelta) * 3;
-  const gain = (signal: ScanDiffSignal) => Math.max(0, -signal.missingDelta) * 4 + Math.max(0, signal.coverageDelta) * 3;
+  const severity = (signal: ScanDiffSignal) => signal.currentMissingKeys * -1;
+  const gain = (signal: ScanDiffSignal) => signal.currentMissingKeys;
 
-  regressed.sort((a, b) => severity(b) - severity(a) || a.label.localeCompare(b.label));
+  regressed.sort((a, b) => severity(a) - severity(b) || a.label.localeCompare(b.label));
   improved.sort((a, b) => gain(b) - gain(a) || a.label.localeCompare(b.label));
 
   return { regressed, improved };
@@ -342,10 +340,11 @@ export function computeScanDiff(current: AnalysisSnapshot, previous: AnalysisSna
     coverageDelta,
     qualityDelta,
     missingKeysDelta,
-    regressedLocales: regressedLocales.slice(0, 3),
-    improvedLocales: improvedLocales.slice(0, 3),
-    regressedModules: regressedModules.slice(0, 3),
-    improvedModules: improvedModules.slice(0, 3),
+    totalMissingKeys: current.missingKeys,
+    regressedLocales: regressedLocales.slice(0, 6),
+    improvedLocales: improvedLocales.slice(0, 6),
+    regressedModules: regressedModules.slice(0, 6),
+    improvedModules: improvedModules.slice(0, 6),
   };
 }
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { RefreshCw, GitBranch, ChevronDown, ExternalLink, Sun, Moon, GitCompareArrows, CheckCircle2, ShieldAlert, TriangleAlert, Code2 } from 'lucide-react';
 import type { RepoInfo, ScanDiffSummary } from '@/lib/types';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import { navigateWithTransition } from '@/lib/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 
 function ThemeToggle() {
@@ -99,12 +100,18 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
   const onSdkPage = pathname?.endsWith('/sdk');
   const diffTone = getDiffTone(scanDiff?.status ?? 'watch');
 
+  useEffect(() => {
+    router.prefetch?.(`/repo/${repo.id}`);
+    router.prefetch?.(`/repo/${repo.id}/diff`);
+    router.prefetch?.(`/repo/${repo.id}/sdk`);
+  }, [repo.id, router]);
+
   const handleNav = (target: 'diff' | 'sdk') => {
     setNavigating(target);
     const path = target === 'sdk'
       ? (onSdkPage ? `/repo/${repo.id}` : `/repo/${repo.id}/sdk`)
       : (onDiffPage ? `/repo/${repo.id}` : `/repo/${repo.id}/diff`);
-    router.push(path);
+    navigateWithTransition(router, path);
   };
 
   const handleRefresh = async () => {
@@ -116,7 +123,7 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
   const handleSignOut = async () => {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
-    router.replace('/landing');
+    navigateWithTransition(router, '/landing', 'replace');
   };
 
   const analyzedLabel = formatAnalyzedLabel(repo.lastAnalyzed);

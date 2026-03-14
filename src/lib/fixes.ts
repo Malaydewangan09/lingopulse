@@ -54,9 +54,12 @@ async function translateBatch(
   entries: PendingTranslation[],
   lingoApiKey?: string | null,
 ): Promise<{ values: string[]; usedLingo: boolean }> {
-  const fallback = entries.map(entry => entry.sourceText);
-  if (!lingoApiKey || entries.length === 0) {
-    return { values: fallback, usedLingo: false };
+  if (entries.length === 0) {
+    return { values: [], usedLingo: false };
+  }
+
+  if (!lingoApiKey?.trim()) {
+    throw new Error('Lingo.dev API key missing for draft translation generation');
   }
 
   try {
@@ -66,11 +69,20 @@ async function translateBatch(
     const translated = await engine.localizeObject(payload, { sourceLocale, targetLocale }) as Record<string, string>;
 
     return {
-      values: entries.map((_, index) => translated[`item_${index}`] ?? fallback[index]),
+      values: entries.map((_, index) => {
+        const value = translated[`item_${index}`];
+        if (typeof value !== 'string' || !value.trim()) {
+          throw new Error('Lingo.dev returned an incomplete translation payload');
+        }
+        return value;
+      }),
       usedLingo: true,
     };
-  } catch {
-    return { values: fallback, usedLingo: false };
+  } catch (error: unknown) {
+    if (error instanceof Error && /incomplete translation payload/i.test(error.message)) {
+      throw error;
+    }
+    throw new Error(`Lingo.dev failed to generate ${targetLocale} translations. Check the API key and try again.`);
   }
 }
 
@@ -181,6 +193,7 @@ export async function createDraftFixPullRequest(input: DraftFixInput): Promise<D
 
   return {
     prUrl: pr.html_url,
+    prNumber: pr.number,
     branch,
     filesUpdated: changedFiles.length,
     localesTouched,

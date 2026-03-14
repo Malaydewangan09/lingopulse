@@ -4,6 +4,35 @@ import { CheckCircle2, GitPullRequest, LoaderCircle, ShieldAlert, Sparkles, Tria
 import SectionHeader from '@/components/dashboard/SectionHeader';
 import type { DraftFixResult, ScanDiffSignal, ScanDiffSummary } from '@/lib/types';
 
+function Tooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span 
+      style={{ position: 'relative', display: 'inline-flex', alignSelf: 'flex-start' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span style={{ fontSize: 9, color: 'var(--text-3)', marginLeft: 4 }}>ⓘ</span>
+      {show && (
+        <span style={{
+          position: 'absolute', bottom: '140%', left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--card)', border: '1px solid var(--border-bright)', borderRadius: 8,
+          padding: '8px 12px', fontSize: 11, color: 'var(--text-2)',
+          zIndex: 100, fontFamily: 'var(--font-sans)', fontWeight: 500,
+          whiteSpace: 'normal', width: 180, textAlign: 'center', lineHeight: 1.4,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+        }}>
+          {text}
+          <span style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            border: '6px solid transparent', borderTopColor: 'var(--border-bright)',
+          }} />
+        </span>
+      )}
+    </span>
+  );
+}
+
 interface Props {
   diff: ScanDiffSummary | null;
   creatingFixPr: boolean;
@@ -64,6 +93,9 @@ function SignalList({
   emptyLabel: string;
   positive?: boolean;
 }) {
+  const tooltipText = positive 
+    ? (title.includes('modules') ? 'Modules with 100% coverage' : 'Locales with 100% coverage')
+    : (title.includes('modules') ? 'Modules with missing keys' : 'Locales with missing keys');
   return (
     <div
       style={{
@@ -73,8 +105,9 @@ function SignalList({
         padding: 14,
       }}
     >
-      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 10 }}>
+      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
         {title}
+        <Tooltip text={tooltipText} />
       </div>
 
       {signals.length === 0 ? (
@@ -127,6 +160,7 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
     coverageDelta: 0,
     qualityDelta: 0,
     missingKeysDelta: 0,
+    totalMissingKeys: 0,
     regressedLocales: [],
     improvedLocales: [],
     regressedModules: [],
@@ -252,7 +286,7 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
             Draft fix PR created
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-            {fixResult.keysFilled} keys drafted across {fixResult.filesUpdated} files.
+            {fixResult.keysFilled} keys drafted across {fixResult.filesUpdated} files. Merge that PR to update the default-branch dashboard.
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
             {fixResult.mode === 'lingo' ? 'Lingo.dev draft ready on GitHub.' : 'Source-copy fallback draft ready on GitHub.'}
@@ -289,9 +323,9 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
 
           {showComparison ? (
             [
-              { label: 'coverage', value: formatDelta(activeDiff.coverageDelta, ' pts'), color: activeDiff.coverageDelta >= 0 ? 'var(--success)' : 'var(--danger)' },
-              { label: 'quality', value: formatDelta(activeDiff.qualityDelta), color: activeDiff.qualityDelta >= 0 ? 'var(--success)' : 'var(--danger)' },
-              { label: 'missing keys', value: formatMissingDelta(activeDiff.missingKeysDelta), color: activeDiff.missingKeysDelta <= 0 ? 'var(--success)' : 'var(--danger)' },
+              { label: 'coverage', value: formatDelta(activeDiff.coverageDelta, ' pts'), color: activeDiff.coverageDelta >= 0 ? 'var(--success)' : 'var(--danger)', tooltip: 'Change in coverage from previous scan' },
+              { label: 'quality', value: formatDelta(activeDiff.qualityDelta), color: activeDiff.qualityDelta >= 0 ? 'var(--success)' : 'var(--danger)', tooltip: 'Change in quality score from previous scan' },
+              { label: 'missing keys', value: String(activeDiff.totalMissingKeys ?? activeDiff.regressedLocales.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? activeDiff.regressedModules.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? 0), color: (activeDiff.totalMissingKeys ?? activeDiff.regressedLocales.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? 0) > 0 ? 'var(--danger)' : 'var(--success)', tooltip: 'Total untranslated keys in worst affected locales' },
             ].map(stat => (
               <div
                 key={stat.label}
@@ -303,8 +337,9 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
                   minWidth: 0,
                 }}
               >
-                <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8 }}>
+                <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   {stat.label}
+                  <Tooltip text={stat.tooltip} />
                 </div>
                 <div style={{ fontSize: 20, color: stat.color, fontWeight: 600 }}>
                   {stat.value}
@@ -346,14 +381,14 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
         {showComparison && (
           <div className="dashboard-scan-grid">
             <SignalList
-              title="Top regressions"
+              title={activeDiff.regressedModules.length > 0 ? "Top regressions (modules)" : "Top regressions (locales)"}
               signals={activeDiff.regressedModules.length > 0 ? activeDiff.regressedModules : activeDiff.regressedLocales}
-              emptyLabel="No new regressions in the latest comparison."
+              emptyLabel="No missing keys found."
             />
             <SignalList
-              title="Recent recoveries"
+              title={activeDiff.improvedModules.length > 0 ? "Complete (modules)" : "Complete (locales)"}
               signals={activeDiff.improvedModules.length > 0 ? activeDiff.improvedModules : activeDiff.improvedLocales}
-              emptyLabel="Recovery signals will appear after the next improving scan."
+              emptyLabel="No completed locales yet."
               positive
             />
           </div>
@@ -374,14 +409,31 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: fixError ? 'var(--danger)' : 'var(--text-1)', fontWeight: 600, marginBottom: 4 }}>
-                {fixError ? 'Draft fix PR failed' : 'Latest draft fix PR'}
+              <div style={{ fontSize: 12, color: fixError ? 'var(--danger)' : visibleDraftFix?.isMerged ? 'var(--success)' : 'var(--text-1)', fontWeight: 600, marginBottom: 4 }}>
+                {fixError ? 'Draft fix PR failed' : visibleDraftFix?.isMerged ? 'Last fix PR merged' : 'Draft fix PR is open'}
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
                 {fixError
                   ? fixError
                   : `${visibleDraftFix?.keysFilled ?? 0} keys drafted across ${visibleDraftFix?.filesUpdated ?? 0} files · ${visibleDraftFix?.mode === 'lingo' ? 'Lingo.dev translation draft' : 'source-copy fallback'}`}
               </div>
+              {!fixError && !visibleDraftFix?.isMerged && (
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, lineHeight: 1.5 }}>
+                  The main dashboard stays on {` `}
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-2)' }}>master</span>
+                  {` `}until this PR is merged.
+                </div>
+              )}
+              {!fixError && !visibleDraftFix?.isMerged && (
+                <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4, lineHeight: 1.5 }}>
+                  Merge the fix PR to turn the default-branch heatmap green.
+                </div>
+              )}
+              {visibleDraftFix?.isMerged && (
+                <div style={{ fontSize: 11, color: 'var(--success)', marginTop: 4, lineHeight: 1.5 }}>
+                  The heatmap has been updated with the merged changes.
+                </div>
+              )}
             </div>
 
             {visibleDraftFix && (

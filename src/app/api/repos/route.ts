@@ -7,12 +7,18 @@ import { createOrUpdatePullRequestComment, getRepoInfo, registerWebhook } from '
 import { fetchI18nFiles } from '@/lib/github';
 import { analyzeRepo, getLocaleMetadata } from '@/lib/analyze';
 import { buildPrCommentBody, computeScanDiff, snapshotFromAnalysisResult, snapshotFromStoredMetrics } from '@/lib/diff';
+import { validateLingoApiKey } from '@/lib/lingo';
+import { derivePrCheckStatus } from '@/lib/pr-checks';
 import crypto from 'crypto';
 
 interface ConnectRepoRequest {
   repoUrl?: string;
   githubToken?: string;
   lingoApiKey?: string | null;
+}
+
+interface ExistingRepoRow {
+  id: string;
 }
 
 interface GithubRepoInfo {
@@ -58,14 +64,34 @@ export async function POST(req: NextRequest) {
 
   const db = supabaseAdmin();
 
+  try {
+    await validateLingoApiKey(lingoApiKey.trim());
+  } catch (error: unknown) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Invalid Lingo.dev API key',
+    }, { status: 422 });
+  }
+
   // Check if already connected
   const { data: existing } = await db
     .from('repos')
     .select('id')
     .eq('full_name', fullName)
     .eq('owner_user_id', user.id)
-    .single();
-  if (existing) return NextResponse.json({ error: 'Repo already connected', id: existing.id }, { status: 409 });
+    .single<ExistingRepoRow>();
+  if (existing) {
+    await db
+      .from('repos')
+      .update({
+        github_token: githubToken,
+        lingo_api_key: lingoApiKey.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+      .eq('owner_user_id', user.id);
+
+    return NextResponse.json({ error: 'Repo already connected', id: existing.id, credentialsUpdated: true }, { status: 409 });
+  }
 
   // Validate token + get repo info
   let repoInfo: GithubRepoInfo;
@@ -274,11 +300,12 @@ export async function analyzeAndStore(
 
   // Upsert PR check
   if (prNumber && triggeredBy === 'pr') {
-    const status = scanDiff.status === 'safe'
-      ? 'passing'
-      : scanDiff.status === 'watch'
-      ? 'warning'
-      : 'failing';
+    const coverageBefore = prevRun?.overall_coverage ?? result.overallCoverage;
+    const status = derivePrCheckStatus({
+      coverageBefore,
+      coverageAfter: result.overallCoverage,
+      missingKeys: result.missingKeys,
+    });
 
     await db.from('pr_checks').upsert({
       repo_id:         repoId,
@@ -287,7 +314,7 @@ export async function analyzeAndStore(
       author:          author ?? '',
       branch,
       status,
-      coverage_before: prevRun?.overall_coverage ?? result.overallCoverage,
+      coverage_before: coverageBefore,
       coverage_after:  result.overallCoverage,
       missing_keys:    result.missingKeys,
       run_id:          run.id,

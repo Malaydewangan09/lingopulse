@@ -38,7 +38,7 @@ export default function ActivityFeed({ events }: Props) {
       {/* Header */}
       <SectionHeader
         title="Recent Activity"
-        tooltip="Every event that changed your translations — git pushes, PR opens/merges, and scheduled analyses. Coverage delta (+/-%) shows if a push improved or hurt your coverage."
+        tooltip="Every event that changed your translations. Git pushes, PR opens/merges, and scheduled analyses. Coverage delta (+/-%) shows if a push improved or hurt your coverage."
         right={
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="status-live" />

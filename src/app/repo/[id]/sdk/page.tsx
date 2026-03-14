@@ -6,7 +6,9 @@ import { CheckCircle2, Copy, Link2, RadioTower, ShieldAlert, TerminalSquare } fr
 // RadioTower still used in MetricCard, ShieldAlert/TerminalSquare in metrics
 import Header from '@/components/dashboard/Header';
 import MetricCard from '@/components/dashboard/MetricCard';
+import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import Sidebar from '@/components/dashboard/Sidebar';
+import { fetchRepoDataCached, peekRepoData } from '@/lib/repo-data-cache';
 import type { RepoInfo, ScanDiffSummary } from '@/lib/types';
 
 type NumericValue = number | string | null | undefined;
@@ -220,17 +222,16 @@ function EnvConfigBlock({ repoId, ingestKey, apiBase }: { repoId: string; ingest
 
 export default function RepoSdkPage() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(() => peekRepoData<DashboardData>(id));
+  const [loading, setLoading] = useState(() => !peekRepoData<DashboardData>(id));
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [activeSnippet, setActiveSnippet] = useState('plain');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options: { force?: boolean } = {}) => {
     try {
-      const res = await fetch(`/api/repos/${id}`);
-      if (!res.ok) throw new Error(`${res.status}`);
-      setData(await res.json());
+      const next = await fetchRepoDataCached<DashboardData>(id, { force: options.force });
+      setData(next);
       setError('');
     } catch (nextError: unknown) {
       setError(nextError instanceof Error ? nextError.message : 'Request failed');
@@ -240,6 +241,11 @@ export default function RepoSdkPage() {
   }, [id]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const timer = setInterval(() => { void load({ force: true }); }, 15_000);
+    return () => clearInterval(timer);
+  }, [load]);
 
   const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
 
@@ -343,7 +349,7 @@ const label = t('checkout.pay_now');`;
       <Sidebar activeSection="overview" currentRepoId={id} />
       <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
-          <Header repo={repo} scanDiff={data.scanDiff} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} refreshing={refreshing} />
+          <Header repo={repo} scanDiff={data.scanDiff} onRefresh={async () => { setRefreshing(true); await load({ force: true }); setRefreshing(false); }} refreshing={refreshing} />
 
           <main className="dashboard-main">
             <div className="dashboard-metrics-grid">
@@ -361,7 +367,7 @@ const label = t('checkout.pay_now');`;
                   onTabChange={setActiveSnippet}
                 />
 
-                {/* What gets reported — compact tag strip */}
+                {/* What gets reported: compact tag strip */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>reports:</span>
                   {['raw key', 'placeholder leak', 'fallback copy', 'empty value'].map(label => (
@@ -475,16 +481,10 @@ const label = t('checkout.pay_now');`;
 
 function LoadingSkeleton() {
   return (
-    <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
-      <div style={{ height: 56, background: 'var(--card)', borderBottom: '1px solid var(--border)' }} />
-      <div className="dashboard-main">
-        <div className="dashboard-metrics-grid">
-          {[0, 1, 2, 3].map(index => (
-            <div key={index} className="skeleton" style={{ height: 110, borderRadius: 12 }} />
-          ))}
-        </div>
-      </div>
-    </div>
+    <ProductPageLoader
+      title="Loading SDK workspace"
+      subtitle="Preparing install steps, credentials, and the latest runtime incident feed."
+    />
   );
 }
 
@@ -499,11 +499,9 @@ function ErrorState({ error }: { error: string }) {
 
 function WaitingForAnalysis() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column', gap: 12 }}>
-      <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 10 }} />
-      <span style={{ color: 'var(--text-2)', fontFamily: 'DM Mono, monospace', fontSize: 13 }}>
-        Analysis in progress… SDK setup becomes available after the first successful scan
-      </span>
-    </div>
+    <ProductPageLoader
+      title="SDK setup unlocks after first scan"
+      subtitle="Run the first repo analysis to scope incident reporting and verify the runtime reporter."
+    />
   );
 }

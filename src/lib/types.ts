@@ -83,6 +83,7 @@ export interface ScanDiffSummary {
   coverageDelta: number;
   qualityDelta: number;
   missingKeysDelta: number;
+  totalMissingKeys: number;
   regressedLocales: ScanDiffSignal[];
   improvedLocales: ScanDiffSignal[];
   regressedModules: ScanDiffSignal[];
@@ -91,11 +92,13 @@ export interface ScanDiffSummary {
 
 export interface DraftFixResult {
   prUrl: string;
+  prNumber: number;
   branch: string;
   filesUpdated: number;
   localesTouched: string[];
   keysFilled: number;
   mode: 'lingo' | 'source';
+  isMerged?: boolean;
 }
 
 export type TranslationIncidentIssueType = 'raw_key' | 'placeholder' | 'fallback' | 'empty';

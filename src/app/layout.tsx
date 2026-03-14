@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import RouteClassManager from "@/components/RouteClassManager";
+import RouteTransitionShell from "@/components/RouteTransitionShell";
 
 export const metadata: Metadata = {
   title: "Lingo Pulse",
@@ -12,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <RouteClassManager />
-        {children}
+        <RouteTransitionShell>{children}</RouteTransitionShell>
       </body>
     </html>
   );

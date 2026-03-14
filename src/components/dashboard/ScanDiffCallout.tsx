@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CheckCircle2, GitCompareArrows, ShieldAlert, TriangleAlert } from 'lucide-react';
+import { navigateWithTransition } from '@/lib/navigation';
 import type { ScanDiffSummary } from '@/lib/types';
 
 interface Props {
@@ -87,7 +88,7 @@ export default function ScanDiffCallout({ repoId, diff, compact = false }: Props
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: compact ? 'flex-start' : 'flex-end' }}>
         <button
-          onClick={() => router.push(`/repo/${repoId}/diff`)}
+          onClick={() => navigateWithTransition(router, `/repo/${repoId}/diff`)}
           style={{
             height: 36,
             padding: '0 14px',

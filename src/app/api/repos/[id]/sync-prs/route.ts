@@ -21,7 +21,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!repo) return NextResponse.json({ error: 'Repo not found' }, { status: 404 });
 
-    const prs = await listPullRequests(repo.full_name, repo.github_token, 'all', 12);
+    const prs = await listPullRequests(repo.full_name, repo.github_token, 'open', 12);
+    const openPrNumbers = new Set(prs.map(pr => pr.number).filter((value): value is number => Number.isFinite(value)));
+
+    const { data: existingChecks } = await db
+      .from('pr_checks')
+      .select('id, pr_number')
+      .eq('repo_id', repo.id);
+
+    const stalePrNumbers = (existingChecks ?? [])
+      .map(check => Number(check.pr_number))
+      .filter(prNumber => Number.isFinite(prNumber) && !openPrNumbers.has(prNumber));
+
+    if (stalePrNumbers.length > 0) {
+      await Promise.all(
+        stalePrNumbers.map(prNumber =>
+          db.from('pr_checks').delete().eq('repo_id', repo.id).eq('pr_number', prNumber)
+        ),
+      );
+    }
+
     if (prs.length === 0) {
       return NextResponse.json({ synced: 0, message: 'No recent pull requests to sync.' });
     }

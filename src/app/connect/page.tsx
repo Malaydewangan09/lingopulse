@@ -1,7 +1,8 @@
 'use client';
 import { useDeferredValue, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield, LogOut, Search, RefreshCw, Lock, Sparkles, GitBranch } from 'lucide-react';
+import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield, LogOut, Search, RefreshCw, Lock, Sparkles, GitBranch, Eye, EyeOff } from 'lucide-react';
+import { navigateWithTransition } from '@/lib/navigation';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
 type Step = 'form' | 'analyzing' | 'done' | 'error' | 'exists';
@@ -16,6 +17,7 @@ interface AnalysisProgress {
 interface ConnectRepoResponse {
   id?: string;
   error?: string;
+  credentialsUpdated?: boolean;
 }
 
 interface GithubSessionMetadata {
@@ -93,6 +95,7 @@ export default function ConnectPage() {
   const [progressLabel, setProgressLabel] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [existingRepoId, setExistingRepoId] = useState('');
+  const [existingCredentialsUpdated, setExistingCredentialsUpdated] = useState(false);
   const [repoSource, setRepoSource] = useState<RepoSource>('manual');
   const [pickerState, setPickerState] = useState<PickerState>('idle');
   const [pickerError, setPickerError] = useState('');
@@ -115,7 +118,7 @@ export default function ConnectPage() {
   const handleSignOut = async () => {
     const supabase = createBrowserSupabaseClient();
     await supabase.auth.signOut();
-    router.replace('/landing');
+    navigateWithTransition(router, '/landing', 'replace');
   };
 
   useEffect(() => {
@@ -265,6 +268,7 @@ export default function ConnectPage() {
       if (res.status === 409) {
         // Repo already connected — offer to go there or force-reconnect
         setExistingRepoId(data.id ?? '');
+        setExistingCredentialsUpdated(!!data.credentialsUpdated);
         setStep('exists');
         return;
       }
@@ -284,7 +288,7 @@ export default function ConnectPage() {
 
       setStep('done');
 
-      setTimeout(() => router.push(`/repo/${repoId}`), 1200);
+      setTimeout(() => navigateWithTransition(router, `/repo/${repoId}`), 1200);
     } catch (error: unknown) {
       await animPromise;
       setErrorMsg(error instanceof Error ? error.message : 'Request failed');
@@ -533,7 +537,17 @@ export default function ConnectPage() {
                       {pickerState === 'loading' && (
                         <div style={{ display: 'grid', gap: 10 }}>
                           {[0, 1, 2, 3].map(index => (
-                            <div key={index} className="skeleton" style={{ height: 64, borderRadius: 12 }} />
+                            <div key={index} className="skeleton" style={{ borderRadius: 12, padding: '12px 14px', display: 'grid', gap: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                                <div className="skeleton skeleton-line" style={{ width: `${56 + index * 8}%`, height: 13 }} />
+                                <div className="skeleton skeleton-pill" style={{ width: 68, height: 22 }} />
+                              </div>
+                              <div className="skeleton skeleton-line-sm" style={{ width: `${34 + index * 9}%` }} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div className="skeleton skeleton-line-sm" style={{ width: 52 }} />
+                                <div className="skeleton skeleton-line-sm" style={{ width: 108 }} />
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -762,7 +776,7 @@ export default function ConnectPage() {
             </div>
 
             <button type="submit" style={{
-              width: 'fit-content', minWidth: 356, maxWidth: '100%', padding: '10px 18px', marginTop: 26, marginInline: 'auto',
+              width: 'fit-content', minWidth: 248, maxWidth: '100%', padding: '10px 18px', marginTop: 26, marginInline: 'auto',
               background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 9,
               color: 'var(--accent-button-text)', fontFamily: 'var(--font-sans)',
               fontSize: 12.5, fontWeight: 650, cursor: 'pointer',
@@ -856,11 +870,13 @@ export default function ConnectPage() {
               fontSize: 12, color: 'var(--warning)', fontFamily: 'var(--font-sans)',
               lineHeight: 1.6,
             }}>
-              This repo is already connected. You can view its dashboard or force a fresh reconnect (deletes existing data and re-scans).
+              {existingCredentialsUpdated
+                ? 'This repo is already connected. Stored GitHub and Lingo.dev credentials were refreshed. You can open its dashboard or force a fresh reconnect (deletes existing data and re-scans).'
+                : 'This repo is already connected. You can view its dashboard or force a fresh reconnect (deletes existing data and re-scans).'}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
               {existingRepoId && (
-                <button onClick={() => router.push(`/repo/${existingRepoId}`)} style={{
+                <button onClick={() => navigateWithTransition(router, `/repo/${existingRepoId}`)} style={{
                   width: 'fit-content', minWidth: 248, maxWidth: '100%', padding: '10px 18px', background: 'var(--accent-button)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 8,
                   color: 'var(--accent-button-text)', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                   boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
@@ -894,7 +910,7 @@ export default function ConnectPage() {
 
       {step === 'form' && (
         <button
-          onClick={() => router.push('/docs')}
+          onClick={() => navigateWithTransition(router, '/docs')}
           style={{
             marginTop: 16, background: 'none', border: 'none',
             color: 'var(--text-3)', fontSize: 11, fontFamily: 'var(--font-sans)',
@@ -925,6 +941,8 @@ interface FieldProps {
 
 function Field({ label, icon, placeholder, value, onChange, required, type = 'text', hint }: FieldProps) {
   const [focused, setFocused] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const resolvedType = type === 'password' ? (revealed ? 'text' : 'password') : type;
   return (
     <div style={{ marginBottom: 18 }}>
       <label style={{ display: 'block', fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', fontWeight: 500, marginBottom: 6 }}>
@@ -943,7 +961,7 @@ function Field({ label, icon, placeholder, value, onChange, required, type = 'te
           {icon}
         </span>
         <input
-          type={type}
+          type={resolvedType}
           placeholder={placeholder}
           value={value}
           required={required}
@@ -956,6 +974,27 @@ function Field({ label, icon, placeholder, value, onChange, required, type = 'te
             padding: '10px 0',
           }}
         />
+        {type === 'password' && (
+          <button
+            type="button"
+            onClick={() => setRevealed(current => !current)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-3)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              flexShrink: 0,
+            }}
+            title={revealed ? 'Hide value' : 'Show value'}
+            aria-label={revealed ? 'Hide value' : 'Show value'}
+          >
+            {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+        )}
       </div>
       {hint && (
         <p style={{ marginTop: 5, fontSize: 11, color: 'var(--text-3)', lineHeight: 1.4 }}>{hint}</p>

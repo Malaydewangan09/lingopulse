@@ -5,8 +5,10 @@ import { useParams } from 'next/navigation';
 import { Activity, GitCompareArrows, KeyRound, ShieldAlert } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
 import MetricCard from '@/components/dashboard/MetricCard';
+import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import ScanDiffPanel from '@/components/dashboard/ScanDiffPanel';
 import Sidebar from '@/components/dashboard/Sidebar';
+import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
 import type { DraftFixResult, RepoInfo, ScanDiffSummary } from '@/lib/types';
 
 type NumericValue = number | string | null | undefined;
@@ -68,8 +70,8 @@ function buildRepoInfo(data: DashboardData): RepoInfo {
 
 export default function RepoDiffPage() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(() => peekRepoData<DashboardData>(id));
+  const [loading, setLoading] = useState(() => !peekRepoData<DashboardData>(id));
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState('');
@@ -77,11 +79,10 @@ export default function RepoDiffPage() {
   const [fixPrError, setFixPrError] = useState('');
   const [fixPrResult, setFixPrResult] = useState<DraftFixResult | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options: { force?: boolean } = {}) => {
     try {
-      const res = await fetch(`/api/repos/${id}`);
-      if (!res.ok) throw new Error(`${res.status}`);
-      setData(await res.json());
+      const next = await fetchRepoDataCached<DashboardData>(id, { force: options.force });
+      setData(next);
       setError('');
     } catch (nextError: unknown) {
       setError(nextError instanceof Error ? nextError.message : 'Request failed');
@@ -90,7 +91,7 @@ export default function RepoDiffPage() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -111,16 +112,15 @@ export default function RepoDiffPage() {
 
       for (let attempt = 0; attempt < 15; attempt += 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const status = await fetch(`/api/repos/${id}`);
-        if (!status.ok) break;
-        const fresh = await status.json();
+        const fresh = await fetchRepoDataCached<DashboardData>(id, { force: true });
         if (fresh.latestRun?.id && fresh.latestRun.id !== currentRunId) {
           setData(fresh);
+          setRepoDataCache(id, fresh);
           return;
         }
       }
 
-      await load();
+      await load({ force: true });
     } catch (nextError: unknown) {
       setRefreshError(nextError instanceof Error ? nextError.message : 'Failed to analyze repo');
     } finally {
@@ -143,7 +143,7 @@ export default function RepoDiffPage() {
       }
 
       setFixPrResult(payload as DraftFixResult);
-      await load();
+      await load({ force: true });
     } catch (nextError: unknown) {
       setFixPrError(nextError instanceof Error ? nextError.message : 'Failed to create draft fix PR');
     } finally {
@@ -210,16 +210,10 @@ export default function RepoDiffPage() {
 
 function LoadingSkeleton() {
   return (
-    <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
-      <div style={{ height: 56, background: 'var(--card)', borderBottom: '1px solid var(--border)' }} />
-      <div className="dashboard-main">
-        <div className="dashboard-metrics-grid">
-          {[0, 1, 2, 3].map(index => (
-            <div key={index} className="skeleton" style={{ height: 110, borderRadius: 12 }} />
-          ))}
-        </div>
-      </div>
-    </div>
+    <ProductPageLoader
+      title="Loading scan diff"
+      subtitle="Preparing the latest comparison, regressions, and recovery signals."
+    />
   );
 }
 
@@ -234,11 +228,9 @@ function ErrorState({ error }: { error: string }) {
 
 function WaitingForAnalysis() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column', gap: 12 }}>
-      <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 10 }} />
-      <span style={{ color: 'var(--text-2)', fontFamily: 'DM Mono, monospace', fontSize: 13 }}>
-        Analysis in progress… diff view unlocks after the first successful scan
-      </span>
-    </div>
+    <ProductPageLoader
+      title="Scan diff needs the first analysis"
+      subtitle="Run the first repo analysis to unlock comparisons between scans."
+    />
   );
 }

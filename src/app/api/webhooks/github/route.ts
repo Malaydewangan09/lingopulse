@@ -75,11 +75,19 @@ export async function POST(req: NextRequest) {
   // ── Handle pull_request ────────────────────────────────────────────────────
   if (event === 'pull_request') {
     const action = body.action ?? '';
+    const prNumber  = body.pull_request?.number ?? 0;
+
+    if (action === 'closed') {
+      await Promise.all(repos.map(repo =>
+        db.from('pr_checks').delete().eq('repo_id', repo.id).eq('pr_number', prNumber)
+      ));
+      return NextResponse.json({ ok: true, removed: true });
+    }
+
     if (!['opened', 'synchronize', 'reopened'].includes(action)) {
       return NextResponse.json({ ok: true, skipped: `action=${action}` });
     }
 
-    const prNumber  = body.pull_request?.number ?? 0;
     const prTitle   = body.pull_request?.title ?? '';
     const branch    = body.pull_request?.head?.ref ?? '';
     const commitSha = body.pull_request?.head?.sha ?? '';
