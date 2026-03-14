@@ -210,6 +210,20 @@ supabase/migrations/004_translation_incidents.sql`}</Code>
             </P>
           </Section>
 
+          <Section id="prchecks" title="PR Checks">
+            <P>
+              When you sync PRs, Lingo Pulse analyzes any open pull requests that touch locale files. It posts a comment on each PR with:
+            </P>
+            <ul style={{ color: '#7A9AB8', fontSize: 13, lineHeight: 1.8, marginBottom: 16, paddingLeft: 20 }}>
+              <li>Coverage before and after the changes</li>
+              <li>Number of missing keys introduced or resolved</li>
+              <li>Status: passing, warning, or failing</li>
+            </ul>
+            <P>
+              The comment updates automatically when you re-sync PRs. This helps reviewers catch translation regressions before merging.
+            </P>
+          </Section>
+
           <Section id="webhooks" title="Webhooks">
             <P>
               Lingo Pulse registers a GitHub webhook on your repository pointing to <code style={{ fontFamily: 'DM Mono, monospace', color: '#00E5A0', fontSize: 13 }}>/api/webhooks/github</code>. Push and pull-request events trigger a fresh analysis run automatically.
