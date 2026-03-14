@@ -892,10 +892,9 @@ export default function ConnectPage() {
         )}
       </div>
 
-      {/* Demo link */}
       {step === 'form' && (
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/docs')}
           style={{
             marginTop: 16, background: 'none', border: 'none',
             color: 'var(--text-3)', fontSize: 11, fontFamily: 'var(--font-sans)',
@@ -904,7 +903,7 @@ export default function ConnectPage() {
           onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
         >
-          View demo dashboard →
+          Read the docs →
         </button>
       )}
     </div>

@@ -1,6 +1,20 @@
 # Lingo Pulse
 
+> Like Datadog, but for your translation coverage. Know when Spanish breaks before your users do.
+
 Lingo Pulse is a repo-based i18n monitoring app. It connects to a GitHub repository, scans locale files, shows coverage by locale and module, and surfaces translation quality issues before release.
+
+## Screenshots
+
+![Landing](public/screenshots/landing.png)
+
+![Dashboard](public/screenshots/dashboard.png)
+
+![Scan Diff](public/screenshots/scan-diff.png)
+
+![SDK Setup](public/screenshots/sdk.png)
+
+![Connect](public/screenshots/connect.png)
 
 ## About Lingo.dev
 
@@ -50,9 +64,8 @@ cp .env.example .env.local
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `LINGO_API_KEY`
+- `LINGO_DEV_API_KEY`
 - `GITHUB_WEBHOOK_SECRET`
-- `NEXT_PUBLIC_APP_URL`
 
 4. Run the Supabase migrations in order
 

@@ -119,7 +119,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
     }}>
       {/* Logo — click to go home */}
       <button
-        onClick={() => router.push('/landing')}
+        onClick={() => router.push('/')}
         title="Home"
         style={{
           width: 28, height: 28, borderRadius: 8, border: 'none',
@@ -336,7 +336,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
           )}
         </div>
 
-        <SideBtn id="__home" icon={<Home size={18} />} label="Home" onClick={() => router.push('/landing')} />
+        <SideBtn id="__home" icon={<Home size={18} />} label="Home" onClick={() => router.push('/')} />
         <SideBtn id="__add" icon={<Plus size={18} />} label="Connect new repo" onClick={() => router.push('/connect')} />
       </div>
     </div>
