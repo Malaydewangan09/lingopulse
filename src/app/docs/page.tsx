@@ -8,7 +8,7 @@ const NAV = [
   { id: 'quickstart',  label: 'Quick start' },
   { id: 'analysis',    label: 'How analysis works' },
   { id: 'webhooks',    label: 'Webhooks' },
-  { id: 'sdk',         label: 'SDK integration' },
+  { id: 'incidentsdk',  label: 'Incident SDK' },
   { id: 'api',         label: 'API reference' },
 ];
 
@@ -234,22 +234,76 @@ supabase/migrations/004_translation_incidents.sql`}</Code>
 # → reconnect the repo to register the webhook`}</Code>
           </Section>
 
-          <Section id="sdk" title="SDK integration">
+          <Section id="incidentsdk" title="Production Incident SDK">
             <P>
-              Lingo Pulse uses <code style={{ fontFamily: 'DM Mono, monospace', color: '#00E5A0', fontSize: 13 }}>@lingo.dev/_sdk</code> to score translation quality. Get your API key from the Lingo.dev dashboard and set it as <code style={{ fontFamily: 'DM Mono, monospace', color: '#7A9AB8', fontSize: 13 }}>LINGO_DEV_API_KEY</code>.
+              Lingo Pulse includes a browser SDK to catch broken translations in production. Get your credentials from the <strong style={{ color: '#E8F0F7' }}>SDK page</strong> in your dashboard.
             </P>
-            <Code>{`npm install @lingo.dev/_sdk`}</Code>
-            <Code>{`import { LingoDotDevEngine } from '@lingo.dev/_sdk';
+            <H3>What it detects</H3>
+            <ul style={{ color: '#7A9AB8', fontSize: 13, lineHeight: 1.8, marginBottom: 20, paddingLeft: 20 }}>
+              <li>Raw keys rendered to users</li>
+              <li>Placeholder leaks like <code style={{ fontFamily: 'DM Mono, monospace', color: '#FF6B35' }}>{'{user_name}'}</code></li>
+              <li>Empty translations</li>
+              <li>Fallback-locale renders (when source language shows instead of translated)</li>
+            </ul>
+            <H3>Plain HTML / JS</H3>
+            <Code>{`<script src="https://your-deploy-url/lingopulse-browser.js"></script>
+<script>
+  const pulse = new window.LingoPulse({
+    repoId: 'your-repo-id',
+    ingestKey: 'your-ingest-key',
+    apiBase: 'https://your-deploy-url',
+    appVersion: 'web@1.0.0',
+  });
 
-const engine = new LingoDotDevEngine({ apiKey: process.env.LINGO_DEV_API_KEY });
+  pulse.inspect('checkout.pay_now', {
+    locale: 'ja',
+    route: '/checkout',
+    translationKey: 'checkout.pay_now',
+  });
+</script>`}</Code>
+            <H3>React / Module</H3>
+            <Code>{`import { LingoPulse } from '@/lib/sdk/lingopulse';
 
-// Score a batch of translated strings
-const result = await engine.localizeObject(
-  { greeting: 'Hola', cta: 'Empezar' },
-  { sourceLocale: 'es', targetLocale: 'en' }
-);`}</Code>
+const pulse = new LingoPulse({
+  repoId: 'your-repo-id',
+  ingestKey: 'your-ingest-key',
+  apiBase: 'https://your-deploy-url',
+  appVersion: 'web@1.0.0',
+});`}</Code>
+            <H3>Wrap your translator</H3>
+            <Code>{`const t = pulse.wrapTranslator(i18n.t.bind(i18n), (key) => ({
+  locale: i18n.language,
+  route: window.location.pathname,
+  translationKey: key,
+}))`}</Code>
+            <H3>Direct inspect</H3>
+            <Code>{`const label = pulse.inspect(i18n.t('checkout.pay_now'), {
+  locale: i18n.language,
+  route: window.location.pathname,
+  translationKey: 'checkout.pay_now',
+});`}</Code>
+            <H3>Raw HTTP payload</H3>
+            <P>Send incidents directly over HTTP without the SDK:</P>
+            <Code>{`POST https://your-deploy-url/api/incidents/report
+{
+  "repoId": "your-repo-id",
+  "ingestKey": "your-ingest-key",
+  "issueType": "fallback",
+  "locale": "ja",
+  "route": "/checkout",
+  "translationKey": "checkout.pay_now",
+  "sampleText": "Pay now",
+  "appVersion": "web@1.0.0"
+}`}</Code>
+            <H3>Credentials</H3>
+            <P>Get your credentials from the SDK page in your dashboard:</P>
+            <ul style={{ color: '#7A9AB8', fontSize: 13, lineHeight: 1.8, marginBottom: 20, paddingLeft: 20 }}>
+              <li><strong>repoId</strong> - identifies your project</li>
+              <li><strong>ingestKey</strong> - public key for incident ingestion</li>
+              <li><strong>apiBase</strong> - your Lingo Pulse deployment URL</li>
+            </ul>
             <P>
-              The SDK is called during each analysis run. Results are stored in the <code style={{ fontFamily: 'DM Mono, monospace', color: '#7A9AB8', fontSize: 13 }}>locale_metrics</code> and <code style={{ fontFamily: 'DM Mono, monospace', color: '#7A9AB8', fontSize: 13 }}>file_metrics</code> tables and surfaced in the dashboard quality chart.
+              Set a distinct <code style={{ fontFamily: 'DM Mono, monospace', color: '#00E5A0' }}>appVersion</code> per app or surface (e.g., <code style={{ fontFamily: 'DM Mono, monospace', color: '#7A9AB8' }}>web@1.4.2</code>, <code style={{ fontFamily: 'DM Mono, monospace', color: '#7A9AB8' }}>marketing@2026-03-13</code>) so incident feeds show which SDK source reported each issue.
             </P>
           </Section>
 

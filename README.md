@@ -48,7 +48,7 @@ const pulse = new LingoPulse({
 });
 ```
 
-Full SDK documentation [here](https://lingopulse-lilac.vercel.app/docs#sdk).
+Full SDK documentation [here](https://lingopulse-lilac.vercel.app/docs#incidentsdk).
 
 ## Docs
 
