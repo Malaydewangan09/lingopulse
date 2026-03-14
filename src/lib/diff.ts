@@ -328,13 +328,15 @@ export function computeScanDiff(current: AnalysisSnapshot, previous: AnalysisSna
     summary = `${summary} · ${current.locales.size} locales tracked`;
   }
 
-  const topModule = regressedModules[0] ?? improvedModules[0];
-  const topLocale = regressedLocales[0] ?? improvedLocales[0];
-  const recommendation = topModule
-    ? `Start with ${topModule.label}: ${topModule.currentMissingKeys} missing keys at ${topModule.currentCoverage.toFixed(1)}% coverage.`
-    : topLocale
-      ? `Review ${topLocale.label}: ${topLocale.currentMissingKeys} missing keys at ${topLocale.currentCoverage.toFixed(1)}% coverage.`
-      : 'No immediate follow-up required from the latest scan.';
+  const topModule = regressedModules.find(m => m.currentMissingKeys > 0);
+  const topLocale = regressedLocales.find(l => l.currentMissingKeys > 0);
+  const recommendation = current.missingKeys === 0
+    ? 'All locales complete. Great job!'
+    : topModule
+      ? `Start with ${topModule.label}: ${topModule.currentMissingKeys} missing keys at ${topModule.currentCoverage.toFixed(1)}% coverage.`
+      : topLocale
+        ? `Review ${topLocale.label}: ${topLocale.currentMissingKeys} missing keys at ${topLocale.currentCoverage.toFixed(1)}% coverage.`
+        : 'No immediate follow-up required from the latest scan.';
 
   return {
     hasBaseline: !!previous,

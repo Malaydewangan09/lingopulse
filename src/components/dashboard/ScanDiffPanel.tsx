@@ -368,7 +368,7 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
           )}
         </div>
 
-        {(visibleDraftFix || fixError) && (
+                {(visibleDraftFix || fixError) && activeDiff.totalMissingKeys > 0 && (
           <div
             style={{
               borderRadius: 10,
