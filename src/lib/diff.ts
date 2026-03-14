@@ -318,9 +318,14 @@ export function computeScanDiff(current: AnalysisSnapshot, previous: AnalysisSna
 
   let summary = `${current.missingKeys} missing keys at ${current.overallCoverage.toFixed(1)}% coverage`;
   if (previous) {
-    summary = `${summary} · ${coverageDelta >= 0 ? '+' : ''}${coverageDelta.toFixed(1)} pts coverage · ${qualityDelta >= 0 ? '+' : ''}${qualityDelta.toFixed(1)} quality · ${missingKeysDelta >= 0 ? '+' : ''}${missingKeysDelta} keys`;
+    const changes: string[] = [];
+    if (coverageDelta !== 0) changes.push(`${coverageDelta >= 0 ? '+' : ''}${coverageDelta.toFixed(1)} pts`);
+    if (qualityDelta !== 0) changes.push(`${qualityDelta >= 0 ? '+' : ''}${qualityDelta.toFixed(1)} quality`);
+    if (changes.length > 0) {
+      summary = `${summary} · ${changes.join(' · ')} since last scan`;
+    }
   } else {
-    summary = `${summary} · ${current.locales.size} locales tracked in the first baseline`;
+    summary = `${summary} · ${current.locales.size} locales tracked`;
   }
 
   const topModule = regressedModules[0] ?? improvedModules[0];

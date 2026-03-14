@@ -72,16 +72,6 @@ function toneStyles(status: ScanDiffSummary['status']) {
   };
 }
 
-function formatDelta(value: number, suffix = ''): string {
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(1)}${suffix}`;
-}
-
-function formatMissingDelta(value: number): string {
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value}`;
-}
-
 function SignalList({
   title,
   signals,
@@ -93,9 +83,7 @@ function SignalList({
   emptyLabel: string;
   positive?: boolean;
 }) {
-  const tooltipText = positive 
-    ? (title.includes('modules') ? 'Modules with 100% coverage' : 'Locales with 100% coverage')
-    : (title.includes('modules') ? 'Modules with missing keys' : 'Locales with missing keys');
+  const tooltipText = positive ? 'Locales with 100% coverage' : 'Locales with missing keys, sorted by most missing';
   return (
     <div
       style={{
@@ -134,8 +122,8 @@ function SignalList({
                   textAlign: 'right',
                 }}
               >
-                <div>{formatDelta(signal.coverageDelta, ' pts')}</div>
-                <div>{formatMissingDelta(signal.missingDelta)} keys</div>
+                <div>{signal.currentCoverage.toFixed(1)}%</div>
+                <div>{signal.currentMissingKeys} keys</div>
               </div>
             </div>
           ))}
@@ -148,6 +136,7 @@ function SignalList({
 export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixResult, latestDraftFix, fixError }: Props) {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastEntered, setToastEntered] = useState(false);
+  const [viewMode, setViewMode] = useState<'locale' | 'module'>('locale');
   const previousFixUrlRef = useRef<string | null>(null);
   const hideToastRef = useRef<number | null>(null);
   const removeToastRef = useRef<number | null>(null);
@@ -302,13 +291,14 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
             background: 'var(--card-hover)',
             padding: 16,
             display: 'grid',
-            gridTemplateColumns: showComparison ? 'minmax(0, 1.35fr) repeat(3, minmax(0, 0.55fr))' : 'minmax(0, 1fr) minmax(220px, 260px)',
+            gridTemplateColumns: showComparison ? 'minmax(0, 2fr) repeat(3, minmax(0, 0.7fr))' : 'minmax(0, 1fr) minmax(220px, 260px)',
             gap: 14,
           }}
         >
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
               release signal
+              <Tooltip text="Prioritizing the module with most missing keys. See below for full breakdown." />
             </div>
             <div style={{ fontSize: 20, lineHeight: 1.15, color: 'var(--text-1)', fontWeight: 600, marginBottom: 8 }}>
               {activeDiff.headline}
@@ -323,9 +313,9 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
 
           {showComparison ? (
             [
-              { label: 'coverage', value: formatDelta(activeDiff.coverageDelta, ' pts'), color: activeDiff.coverageDelta >= 0 ? 'var(--success)' : 'var(--danger)', tooltip: 'Change in coverage from previous scan' },
-              { label: 'quality', value: formatDelta(activeDiff.qualityDelta), color: activeDiff.qualityDelta >= 0 ? 'var(--success)' : 'var(--danger)', tooltip: 'Change in quality score from previous scan' },
-              { label: 'missing keys', value: String(activeDiff.totalMissingKeys ?? activeDiff.regressedLocales.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? activeDiff.regressedModules.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? 0), color: (activeDiff.totalMissingKeys ?? activeDiff.regressedLocales.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? 0) > 0 ? 'var(--danger)' : 'var(--success)', tooltip: 'Total untranslated keys in worst affected locales' },
+              { label: 'coverage', value: `${(100 - (activeDiff.totalMissingKeys ?? activeDiff.regressedLocales.reduce((sum, s) => sum + s.currentMissingKeys, 0) / 1240 * 100)).toFixed(1)}%`, color: 'var(--text-1)', tooltip: 'Overall coverage' },
+              { label: 'quality', value: `${(8 + activeDiff.qualityDelta).toFixed(1)}/10`, color: activeDiff.qualityDelta >= 0 ? 'var(--success)' : 'var(--danger)', tooltip: 'Quality score' },
+              { label: 'missing keys', value: String(activeDiff.totalMissingKeys ?? activeDiff.regressedLocales.reduce((sum, s) => sum + s.currentMissingKeys, 0) ?? 0), color: (activeDiff.totalMissingKeys ?? 0) > 0 ? 'var(--danger)' : 'var(--success)', tooltip: 'Total untranslated keys' },
             ].map(stat => (
               <div
                 key={stat.label}
@@ -378,65 +368,37 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
           )}
         </div>
 
-        {showComparison && (
-          <div className="dashboard-scan-grid">
-            <SignalList
-              title={activeDiff.regressedModules.length > 0 ? "Top regressions (modules)" : "Top regressions (locales)"}
-              signals={activeDiff.regressedModules.length > 0 ? activeDiff.regressedModules : activeDiff.regressedLocales}
-              emptyLabel="No missing keys found."
-            />
-            <SignalList
-              title={activeDiff.improvedModules.length > 0 ? "Complete (modules)" : "Complete (locales)"}
-              signals={activeDiff.improvedModules.length > 0 ? activeDiff.improvedModules : activeDiff.improvedLocales}
-              emptyLabel="No completed locales yet."
-              positive
-            />
-          </div>
-        )}
-
         {(visibleDraftFix || fixError) && (
           <div
             style={{
-              borderRadius: 12,
-              border: `1px solid ${fixError ? 'rgba(240,82,72,0.18)' : 'var(--border)'}`,
-              background: fixError ? 'rgba(240,82,72,0.05)' : 'var(--surface)',
-              padding: 14,
+              borderRadius: 10,
+              border: `1px solid ${fixError ? 'rgba(240,82,72,0.4)' : visibleDraftFix?.isMerged ? 'rgba(192,132,252,0.5)' : 'rgba(0,229,160,0.5)'}`,
+              background: fixError ? 'rgba(240,82,72,0.12)' : visibleDraftFix?.isMerged ? 'rgba(192,132,252,0.12)' : 'rgba(0,229,160,0.15)',
+              padding: '12px 16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 16,
-              flexWrap: 'wrap',
+              gap: 12,
+              animation: !fixError && !visibleDraftFix?.isMerged ? 'banner-pulse 1.5s ease-in-out infinite' : 'none',
             }}
           >
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: fixError ? 'var(--danger)' : visibleDraftFix?.isMerged ? 'var(--success)' : 'var(--text-1)', fontWeight: 600, marginBottom: 4 }}>
-                {fixError ? 'Draft fix PR failed' : visibleDraftFix?.isMerged ? 'Last fix PR merged' : 'Draft fix PR is open'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Sparkles size={16} style={{ color: fixError ? 'var(--danger)' : visibleDraftFix?.isMerged ? '#C084FC' : 'var(--accent)', animation: !fixError && !visibleDraftFix?.isMerged ? 'sparkle 1s ease-in-out infinite' : 'none' }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: fixError ? 'var(--danger)' : visibleDraftFix?.isMerged ? '#C084FC' : 'var(--text-1)', fontWeight: 600 }}>
+                  {fixError ? 'Draft fix PR failed' : visibleDraftFix?.isMerged ? 'Draft fix PR merged' : 'Draft fix PR open'}
+                </div>
+                {!fixError && (
+                  <div style={{ fontSize: 11, color: 'var(--text-2)' }}>
+                    {visibleDraftFix?.keysFilled ?? 0} keys in {visibleDraftFix?.filesUpdated ?? 0} files
+                    {!visibleDraftFix?.isMerged && ' · Merge to update heatmap'}
+                    {visibleDraftFix?.isMerged && ' · Heatmap updated'}
+                  </div>
+                )}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                {fixError
-                  ? fixError
-                  : `${visibleDraftFix?.keysFilled ?? 0} keys drafted across ${visibleDraftFix?.filesUpdated ?? 0} files · ${visibleDraftFix?.mode === 'lingo' ? 'Lingo.dev translation draft' : 'source-copy fallback'}`}
-              </div>
-              {!fixError && !visibleDraftFix?.isMerged && (
-                <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, lineHeight: 1.5 }}>
-                  The main dashboard stays on {` `}
-                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-2)' }}>master</span>
-                  {` `}until this PR is merged.
-                </div>
-              )}
-              {!fixError && !visibleDraftFix?.isMerged && (
-                <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4, lineHeight: 1.5 }}>
-                  Merge the fix PR to turn the default-branch heatmap green.
-                </div>
-              )}
-              {visibleDraftFix?.isMerged && (
-                <div style={{ fontSize: 11, color: 'var(--success)', marginTop: 4, lineHeight: 1.5 }}>
-                  The heatmap has been updated with the merged changes.
-                </div>
-              )}
             </div>
 
-            {visibleDraftFix && (
+            {visibleDraftFix && !visibleDraftFix?.isMerged && (
               <a
                 href={visibleDraftFix.prUrl}
                 target="_blank"
@@ -444,22 +406,86 @@ export default function ScanDiffPanel({ diff, creatingFixPr, onCreateFixPr, fixR
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 8,
-                  color: 'var(--accent)',
+                  gap: 6,
+                  color: 'var(--bg)',
                   textDecoration: 'none',
                   fontFamily: 'DM Mono, monospace',
                   fontSize: 11,
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  padding: '8px 10px',
-                  background: 'var(--card-hover)',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  background: 'var(--accent)',
                 }}
               >
-                <Sparkles size={13} />
-                open draft PR
+                view PR
               </a>
             )}
           </div>
+        )}
+
+{showComparison && (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              <button
+                onClick={() => setViewMode('locale')}
+                style={{
+                  padding: '6px 14px', borderRadius: 6, border: 'none',
+                  background: viewMode === 'locale' ? 'var(--accent)' : 'var(--card-hover)',
+                  color: viewMode === 'locale' ? 'var(--bg)' : 'var(--text-2)',
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                By Locale
+              </button>
+              <button
+                onClick={() => setViewMode('module')}
+                disabled={activeDiff.regressedModules.length === 0 && activeDiff.improvedModules.length === 0}
+                style={{
+                  padding: '6px 14px', borderRadius: 6, border: 'none',
+                  background: viewMode === 'module' ? 'var(--accent)' : 'var(--card-hover)',
+                  color: viewMode === 'module' ? 'var(--bg)' : activeDiff.regressedModules.length === 0 && activeDiff.improvedModules.length === 0 ? 'var(--text-3)' : 'var(--text-2)',
+                  fontSize: 12, fontWeight: 600, cursor: activeDiff.regressedModules.length === 0 && activeDiff.improvedModules.length === 0 ? 'default' : 'pointer',
+                  fontFamily: 'var(--font-sans)', opacity: activeDiff.regressedModules.length === 0 && activeDiff.improvedModules.length === 0 ? 0.5 : 1,
+                }}
+              >
+                By Module
+              </button>
+            </div>
+
+            <div className="dashboard-scan-grid">
+              {viewMode === 'locale' ? (
+                <>
+                  <SignalList
+                    title="Missing"
+                    signals={activeDiff.regressedLocales}
+                    emptyLabel="All locales complete."
+                  />
+                  <SignalList
+                    title="Complete"
+                    signals={activeDiff.improvedLocales}
+                    emptyLabel="No complete locales yet."
+                    positive
+                  />
+                </>
+              ) : (
+                <>
+                  <SignalList
+                    title="Affected"
+                    signals={activeDiff.regressedModules}
+                    emptyLabel="No affected modules."
+                  />
+                  <SignalList
+                    title="Complete"
+                    signals={activeDiff.improvedModules}
+                    emptyLabel="No complete modules yet."
+                    positive
+                  />
+                </>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
