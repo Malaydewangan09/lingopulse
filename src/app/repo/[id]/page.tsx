@@ -495,7 +495,11 @@ export default function RepoDashboard() {
           improvedModules: [],
         },
         latestDraftFix: null,
-        incidents: [],
+        incidents: [
+          { id: '1', issue_type: 'raw_key', locale: 'es', route: '/', translation_key: 'welcome_message', sample_text: 'welcome_message', first_seen_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), hit_count: 15 },
+          { id: '2', issue_type: 'placeholder', locale: 'de', route: '/checkout', translation_key: 'hello_user', sample_text: 'Hello {name}, welcome!', first_seen_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), hit_count: 8 },
+          { id: '3', issue_type: 'empty', locale: 'fr', route: '/pricing', translation_key: 'buy_now', sample_text: '', first_seen_at: new Date().toISOString(), last_seen_at: new Date().toISOString(), hit_count: 23 },
+        ],
       };
       setData(demoData);
       setLoading(false);
@@ -752,7 +756,7 @@ export default function RepoDashboard() {
             )}
 
             {incidents.length > 0 && (
-              <LiveIncidentsWidget incidents={incidents} repoId={data.repo.id} />
+              <LiveIncidentsWidget incidents={incidents} repoId={data.repo.id} sourceLocale="en" />
             )}
 
             <div id="section-workspace" className="animate-fade-up" style={{ animationDelay: '0.1s' }}>

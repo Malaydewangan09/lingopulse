@@ -1,7 +1,5 @@
 const DEFAULT_MAX_AGE_MS = 15_000;
 
-const SESSION_KEY = 'lingopulse_active_analysis';
-
 interface CacheEntry<T> {
   data: T;
   ts: number;
@@ -14,30 +12,20 @@ interface ActiveAnalysis {
   repoId: string;
   startedAt: number;
   previousRunId: string | null;
-  resolve: (() => void) | null;
 }
 
 let globalActiveAnalysis: ActiveAnalysis | null = null;
-let analysisResolveFn: (() => void) | null = null;
 
 export function getActiveAnalysis(): ActiveAnalysis | null {
   return globalActiveAnalysis;
 }
 
 export function setActiveAnalysis(repoId: string, previousRunId: string | null): void {
-  globalActiveAnalysis = { repoId, startedAt: Date.now(), previousRunId, resolve: null };
-}
-
-export function setAnalysisResolve(fn: (() => void) | null): void {
-  if (globalActiveAnalysis) {
-    globalActiveAnalysis.resolve = fn;
-  }
-  analysisResolveFn = fn;
+  globalActiveAnalysis = { repoId, startedAt: Date.now(), previousRunId };
 }
 
 export function clearActiveAnalysis(): void {
   globalActiveAnalysis = null;
-  analysisResolveFn = null;
 }
 
 export function peekRepoData<T>(repoId: string): T | null {

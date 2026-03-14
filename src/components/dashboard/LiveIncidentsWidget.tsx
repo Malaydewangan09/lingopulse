@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Copy, X, Wand2 } from 'lucide-react';
 import type { TranslationIncident } from '@/lib/types';
 
 interface Props {
   incidents: TranslationIncident[];
   repoId: string;
+  sourceLocale?: string;
 }
 
 function formatRelativeTime(value: string) {
@@ -30,9 +31,14 @@ function labelForIssue(issueType: TranslationIncident['issueType']) {
   }
 }
 
-export default function LiveIncidentsWidget({ incidents: initialIncidents, repoId }: Props) {
+export default function LiveIncidentsWidget({ incidents: initialIncidents, repoId, sourceLocale = 'en' }: Props) {
   const [incidents, setIncidents] = useState(initialIncidents);
   const [resolving, setResolving] = useState<string | null>(null);
+  const [fixingIncident, setFixingIncident] = useState<TranslationIncident | null>(null);
+  const [sourceText, setSourceText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [translating, setTranslating] = useState(false);
+  const [copied, setCopied] = useState(false);
   const hasIncidents = incidents.length > 0;
 
   const handleResolve = async (incidentId: string) => {
@@ -45,6 +51,51 @@ export default function LiveIncidentsWidget({ incidents: initialIncidents, repoI
     } finally {
       setResolving(null);
     }
+  };
+
+  const handleFixClick = (incident: TranslationIncident) => {
+    setFixingIncident(incident);
+    setSourceText('');
+    setTranslatedText('');
+    setCopied(false);
+  };
+
+  const handleTranslate = async () => {
+    if (!fixingIncident) return;
+    setTranslating(true);
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoId,
+          key: fixingIncident.translationKey,
+          sourceText: sourceText || fixingIncident.translationKey,
+          targetLocale: fixingIncident.locale,
+          sourceLocale,
+        }),
+      });
+      const data = await res.json();
+      if (data.translation) {
+        setTranslatedText(data.translation);
+      }
+    } catch (e) {
+      console.error('Failed to translate:', e);
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(translatedText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCloseFix = () => {
+    setFixingIncident(null);
+    setSourceText('');
+    setTranslatedText('');
   };
 
   if (!hasIncidents) return null;
@@ -125,7 +176,7 @@ export default function LiveIncidentsWidget({ incidents: initialIncidents, repoI
                 {formatRelativeTime(incident.firstSeenAt)}
               </span>
               <button
-                onClick={() => handleResolve(incident.id)}
+                onClick={() => handleFixClick(incident)}
                 disabled={resolving === incident.id}
                 style={{
                   display: 'flex',
@@ -174,6 +225,198 @@ export default function LiveIncidentsWidget({ incidents: initialIncidents, repoI
           borderTop: '1px solid var(--border)',
         }}>
           Click Fix to resolve incidents
+        </div>
+      )}
+
+      {fixingIncident && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}
+        onClick={handleCloseFix}
+        >
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            padding: 20,
+            width: '90%',
+            maxWidth: 480,
+            maxHeight: '90vh',
+            overflow: 'auto',
+          }}
+          onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Wand2 size={18} color="var(--accent)" />
+                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)' }}>Fix Translation</span>
+              </div>
+              <button onClick={handleCloseFix} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Issue
+              </div>
+              <div style={{ 
+                fontSize: 12, 
+                color: 'var(--warning)', 
+                background: 'var(--bg)', 
+                padding: '8px 12px', 
+                borderRadius: 6 
+              }}>
+                {labelForIssue(fixingIncident.issueType)}: {fixingIncident.translationKey || fixingIncident.sampleText}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+                Current ({fixingIncident.locale}): <span style={{ color: 'var(--danger)' }}>{fixingIncident.sampleText || '(empty)'}</span>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Source Text ({sourceLocale})
+              </div>
+              <input
+                type="text"
+                value={sourceText}
+                onChange={e => setSourceText(e.target.value)}
+                placeholder={fixingIncident.translationKey || 'Enter source text in English...'}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text-1)',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              />
+              <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 4 }}>
+                Enter the correct text in {sourceLocale} that should be translated
+              </div>
+            </div>
+
+            <button
+              onClick={handleTranslate}
+              disabled={translating || !sourceText}
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                borderRadius: 6,
+                border: 'none',
+                background: translating ? 'var(--bg)' : 'var(--accent)',
+                color: translating ? 'var(--text-2)' : 'var(--bg)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: translating ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginBottom: translatedText ? 16 : 0,
+              }}
+            >
+              {translating ? (
+                <>Translating...</>
+              ) : (
+                <><Wand2 size={14} /> Translate with Lingo.dev</>
+              )}
+            </button>
+
+            {translatedText && (
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Fixed Translation ({fixingIncident.locale})
+                </div>
+                <div style={{ 
+                  fontSize: 14, 
+                  color: 'var(--success)', 
+                  background: 'rgba(34,197,94,0.1)', 
+                  padding: '12px', 
+                  borderRadius: 6,
+                  border: '1px solid rgba(34,197,94,0.3)',
+                  marginBottom: 12,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}>
+                  {translatedText}
+                </div>
+                
+                {fixingIncident.issueType === 'placeholder' && (
+                  <div style={{ 
+                    fontSize: 11, 
+                    color: 'var(--warning)', 
+                    background: 'rgba(230,168,23,0.1)', 
+                    padding: '8px 12px', 
+                    borderRadius: 6,
+                    marginBottom: 12,
+                  }}>
+                    ⚠️ Verify that placeholders match the source text!
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={handleCopy}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      borderRadius: 6,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text-1)',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Copy size={14} />
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleResolve(fixingIncident.id);
+                      handleCloseFix();
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      borderRadius: 6,
+                      border: 'none',
+                      background: 'var(--accent)',
+                      color: 'var(--bg)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <CheckCircle size={14} />
+                    Mark Resolved
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

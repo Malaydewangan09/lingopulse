@@ -88,3 +88,4 @@ Deploy to Vercel, add environment variables, run Supabase migrations, and update
 ![Scan Diff](public/screenshots/scan-diff.png)
 ![SDK Setup](public/screenshots/sdk.png)
 ![Connect](public/screenshots/connect.png)
+![Incident SDK fix using Lingo.dev](public/screenshots/incident.png)
