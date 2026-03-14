@@ -16,17 +16,17 @@ function Tooltip({ text }: { text: string }) {
       {show && (
         <span style={{
           position: 'absolute', bottom: '140%', left: '50%', transform: 'translateX(-50%)',
-          background: 'var(--card)', border: '1px solid var(--border-bright)', borderRadius: 8,
+          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8,
           padding: '8px 12px', fontSize: 11, color: 'var(--text-2)',
           zIndex: 100, fontFamily: 'var(--font-sans)', fontWeight: 500,
           whiteSpace: 'normal', width: 180, textAlign: 'center', lineHeight: 1.4,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
         }}>
-          {text}
-          <span style={{
-            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-            border: '6px solid transparent', borderTopColor: 'var(--border-bright)',
-          }} />
+        {text}
+        <span style={{
+          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+          border: '6px solid transparent', borderTopColor: 'var(--border)',
+        }} />
         </span>
       )}
     </span>

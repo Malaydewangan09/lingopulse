@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import type { TranslationIncident } from '@/lib/types';
 
 interface Props {
@@ -30,9 +30,23 @@ function labelForIssue(issueType: TranslationIncident['issueType']) {
   }
 }
 
-export default function LiveIncidentsFullView({ incidents, repoId }: Props) {
+export default function LiveIncidentsFullView({ incidents: initialIncidents, repoId }: Props) {
   const [expanded, setExpanded] = useState(true);
+  const [incidents, setIncidents] = useState(initialIncidents);
+  const [resolving, setResolving] = useState<string | null>(null);
   const hasIncidents = incidents.length > 0;
+
+  const handleResolve = async (incidentId: string) => {
+    setResolving(incidentId);
+    try {
+      await fetch(`/api/incidents/${incidentId}`, { method: 'DELETE' });
+      setIncidents(prev => prev.filter(i => i.id !== incidentId));
+    } catch (e) {
+      console.error('Failed to resolve incident:', e);
+    } finally {
+      setResolving(null);
+    }
+  };
 
   if (!hasIncidents) {
     return (
@@ -116,7 +130,7 @@ export default function LiveIncidentsFullView({ incidents, repoId }: Props) {
                     </div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'center', flexShrink: 0, marginRight: 25 }}>
+                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                     {incident.hitCount}
                   </div>
@@ -124,28 +138,51 @@ export default function LiveIncidentsFullView({ incidents, repoId }: Props) {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <span style={{ 
-                  fontSize: 10, 
-                  color: 'var(--warning)', 
-                  background: 'rgba(230,168,23,0.1)',
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  fontWeight: 500,
-                }}>
-                  {labelForIssue(incident.issueType)}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
-                  first seen {formatRelativeTime(incident.firstSeenAt)}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
-                  last seen {formatRelativeTime(incident.lastSeenAt)}
-                </span>
-                {incident.appVersion && (
-                  <span style={{ fontSize: 10, color: 'var(--blue)' }}>
-                    source {incident.appVersion}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ 
+                    fontSize: 10, 
+                    color: 'var(--warning)', 
+                    background: 'rgba(230,168,23,0.1)',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    fontWeight: 500,
+                  }}>
+                    {labelForIssue(incident.issueType)}
                   </span>
-                )}
+                  <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                    first seen {formatRelativeTime(incident.firstSeenAt)}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                    last seen {formatRelativeTime(incident.lastSeenAt)}
+                  </span>
+                  {incident.appVersion && (
+                    <span style={{ fontSize: 10, color: 'var(--blue)' }}>
+                      source {incident.appVersion}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleResolve(incident.id)}
+                  disabled={resolving === incident.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    border: 'none',
+                    background: 'var(--success)',
+                    color: '#0D1117',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    cursor: resolving === incident.id ? 'wait' : 'pointer',
+                    opacity: resolving === incident.id ? 0.7 : 1,
+                  }}
+                >
+                  <CheckCircle size={12} />
+                  Resolve
+                </button>
               </div>
             </div>
           ))}

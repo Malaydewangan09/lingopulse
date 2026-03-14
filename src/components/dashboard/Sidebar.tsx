@@ -96,7 +96,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
           onMouseLeave={() => setHoveredId(null)}
           style={{
             width: 36, height: 36, borderRadius: 9, border: 'none',
-            background: isActive ? 'var(--card-hover)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
+            background: isActive ? 'var(--card-hover)' : isHov ? 'var(--surface)' : 'transparent',
             color: isActive ? 'var(--accent)' : 'var(--text-3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
@@ -107,10 +107,10 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
         {isHov && (
           <div style={{
             position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)',
-            background: '#0D1117', border: '1px solid var(--border-bright)', borderRadius: 6,
+            background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6,
             padding: '5px 10px', whiteSpace: 'nowrap', fontSize: 11,
             fontFamily: 'DM Mono, monospace', color: 'var(--text-1)',
-            pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
             animation: 'fadeIn 0.1s ease both',
           }}>
             {label}
@@ -123,7 +123,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, width: 52, height: '100vh',
-      background: '#0D1117', borderRight: '1px solid var(--border)',
+      background: 'var(--surface)', borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       paddingTop: 12, paddingBottom: 16, zIndex: 9999, boxSizing: 'border-box',
       flexShrink: 0,
@@ -163,7 +163,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
                   onMouseLeave={() => setHoveredId(null)}
                   style={{
                     width: 36, height: 36, borderRadius: 9, border: 'none',
-                    background: isActive ? 'var(--card-hover)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    background: isActive ? 'var(--card-hover)' : isHov ? 'var(--surface)' : 'transparent',
                     color: isActive ? 'var(--accent)' : 'var(--text-3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
@@ -174,10 +174,10 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
                 {isHov && (
                   <div style={{
                     position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)',
-                    background: '#0D1117', border: '1px solid var(--border-bright)', borderRadius: 6,
+                    background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6,
                     padding: '5px 10px', whiteSpace: 'nowrap', fontSize: 11,
                     fontFamily: 'DM Mono, monospace', color: 'var(--text-1)',
-                    pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                    pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
                     animation: 'fadeIn 0.1s ease both',
                   }}>
                     {item.label}
@@ -206,7 +206,7 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
             onMouseLeave={() => setHoveredId(null)}
             style={{
               width: 36, height: 36, borderRadius: 9, border: 'none',
-              background: showRepos ? 'var(--card-hover)' : hoveredId === '__repos' ? 'rgba(255,255,255,0.05)' : 'transparent',
+              background: showRepos ? 'var(--card-hover)' : hoveredId === '__repos' ? 'var(--surface)' : 'transparent',
               color: showRepos ? 'var(--accent)' : 'var(--text-3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
@@ -218,10 +218,10 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
           {hoveredId === '__repos' && !showRepos && (
             <div style={{
               position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)',
-              background: '#0D1117', border: '1px solid var(--border-bright)', borderRadius: 6,
+              background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6,
               padding: '5px 10px', whiteSpace: 'nowrap', fontSize: 11,
               fontFamily: 'DM Mono, monospace', color: 'var(--text-1)',
-              pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+              pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
               animation: 'fadeIn 0.1s ease both',
             }}>
               Repos
@@ -240,8 +240,8 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
                 onClick={e => e.stopPropagation()}
                 style={{
                   position: 'absolute', bottom: 0, left: 44,
-                  background: '#0D1117', border: '1px solid var(--border-bright)', borderRadius: 8,
-                  minWidth: 220, zIndex: 300, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8,
+                  minWidth: 220, zIndex: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                   overflow: 'hidden', animation: 'fadeSlideUp 0.15s ease both',
                 }}
               >

@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { GitPullRequest, Sparkles } from 'lucide-react';
+import { GitPullRequest, Sparkles, Target, Wand2, KeyRound, AlertTriangle } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
 import CoverageHeatmap from '@/components/dashboard/CoverageHeatmap';
 import QualityChart from '@/components/dashboard/QualityChart';
@@ -9,6 +9,7 @@ import LocaleBreakdown from '@/components/dashboard/LocaleBreakdown';
 import PRChecks from '@/components/dashboard/PRChecks';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LiveIncidentsWidget from '@/components/dashboard/LiveIncidentsWidget';
+import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import { derivePrCheckStatus } from '@/lib/pr-checks';
 import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
@@ -669,47 +670,39 @@ export default function RepoDashboard() {
           )}
 
           <main className="dashboard-main">
-            <div
-              id="section-overview"
-              className="animate-fade-up"
-              style={{
-                animationDelay: '0.04s',
-                marginBottom: 14,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                gap: 0,
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                background: 'var(--card)',
-                overflow: 'hidden',
-              }}
-            >
-              {[
-                { label: 'coverage', value: `${repo.overallCoverage.toFixed(1)}%`, meta: coverageTrend === 0 ? 'stable' : `${coverageTrend > 0 ? '+' : ''}${coverageTrend.toFixed(1)} pts`, tone: 'var(--accent)' },
-                { label: 'quality', value: `${repo.qualityScore.toFixed(1)}/10`, meta: 'lingo.dev', tone: 'var(--text-1)' },
-                { label: 'missing keys', value: `${repo.totalMissingKeys}`, meta: `${repo.totalLocales} locales`, tone: repo.totalMissingKeys > 0 ? 'var(--danger)' : 'var(--success)' },
-                { label: 'live incidents', value: `${incidents.length}`, meta: incidents.length > 0 ? 'needs review' : 'quiet', tone: incidents.length > 0 ? 'var(--danger)' : 'var(--text-1)' },
-              ].map((item, index) => (
-                <div
-                  key={item.label}
-                  style={{
-                    padding: '14px 16px',
-                    borderLeft: index === 0 ? 'none' : '1px solid var(--border)',
-                    display: 'grid',
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-sans)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {item.label}
-                  </div>
-                  <div style={{ fontSize: 26, lineHeight: 1, fontWeight: 600, color: item.tone }}>
-                    {item.value}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-sans)' }}>
-                    {item.meta}
-                  </div>
-                </div>
-              ))}
+            <div className="dashboard-metrics-grid">
+              <MetricCard 
+                label="Coverage" 
+                value={repo.overallCoverage.toFixed(1)} 
+                unit="%" 
+                trend={coverageTrend}
+                trendLabel={coverageTrend === 0 ? 'stable' : `${coverageTrend > 0 ? '+' : ''}${coverageTrend.toFixed(1)} pts`}
+                sublabel="translation coverage"
+                accent
+                icon={<Target size={15} />}
+              />
+              <MetricCard 
+                label="Quality" 
+                value={repo.qualityScore.toFixed(1)} 
+                unit="/10"
+                sublabel="lingo.dev score"
+                icon={<Wand2 size={15} />}
+              />
+              <MetricCard 
+                label="Missing Keys" 
+                value={repo.totalMissingKeys}
+                sublabel={`${repo.totalLocales} locales`}
+                danger={repo.totalMissingKeys > 0}
+                warning={repo.totalMissingKeys > 0}
+                icon={<KeyRound size={15} />}
+              />
+              <MetricCard 
+                label="Live Incidents" 
+                value={incidents.length}
+                sublabel={incidents.length > 0 ? 'needs review' : 'quiet'}
+                danger={incidents.length > 0}
+                icon={<AlertTriangle size={15} />}
+              />
             </div>
 
             {refreshError && (

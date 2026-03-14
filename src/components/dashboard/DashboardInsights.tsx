@@ -46,7 +46,7 @@ export default function DashboardInsights({ cards }: Props) {
                 minWidth: 0,
                 borderRadius: 12,
                 border: `1px solid ${tone.border}`,
-                background: `linear-gradient(180deg, ${tone.glow} 0%, rgba(255,255,255,0.01) 100%)`,
+                background: `linear-gradient(180deg, ${tone.glow} 0%, var(--bg) 100%)`,
                 padding: 16,
               }}
             >
@@ -73,7 +73,7 @@ export default function DashboardInsights({ cards }: Props) {
                   style={{
                     marginTop: 12,
                     paddingTop: 12,
-                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    borderTop: '1px solid var(--border)',
                     fontSize: 10,
                     color: 'var(--text-3)',
                     fontFamily: 'DM Mono, monospace',

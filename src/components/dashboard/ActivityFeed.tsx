@@ -58,12 +58,12 @@ export default function ActivityFeed({ events }: Props) {
               key={event.id}
               style={{
                 padding: '10px 16px',
-                borderBottom: i < events.length - 1 ? '1px solid rgba(28,43,58,0.5)' : 'none',
+                borderBottom: i < events.length - 1 ? '1px solid var(--border)' : 'none',
                 display: 'flex', gap: 10, alignItems: 'flex-start',
                 transition: 'background 0.15s',
                 animationDelay: `${i * 0.06}s`,
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.015)'}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <EventIcon type={event.type} />
