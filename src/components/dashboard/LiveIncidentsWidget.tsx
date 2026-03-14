@@ -104,8 +104,8 @@ export default function LiveIncidentsWidget({ incidents: initialIncidents, repoI
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0, background: 'var(--bg-2)', padding: '3px 8px', borderRadius: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-2)' }}>{incident.hitCount}</span>
-                <span style={{ fontSize: 8, color: 'var(--text-3)' }}>hits</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--warning)' }}>{incident.hitCount}</span>
+                <span style={{ fontSize: 10, color: 'var(--warning)' }}>hits</span>
               </div>
             </div>
 
@@ -161,7 +161,7 @@ export default function LiveIncidentsWidget({ incidents: initialIncidents, repoI
         }}
         onClick={() => window.location.href = `/repo/${repoId}/sdk`}
         >
-          View {incidents.length - 3} more incidents →
+          View all incidents →
         </div>
       )}
 

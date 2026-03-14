@@ -8,7 +8,7 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LiveIncidentsFullView from '@/components/dashboard/LiveIncidentsFullView';
-import { fetchRepoDataCached, peekRepoData } from '@/lib/repo-data-cache';
+import { fetchRepoDataCached, peekRepoData, getActiveAnalysis, setActiveAnalysis } from '@/lib/repo-data-cache';
 import type { RepoInfo, ScanDiffSummary, TranslationIncident } from '@/lib/types';
 
 type NumericValue = number | string | null | undefined;
@@ -259,6 +259,54 @@ export default function RepoSdkPage() {
   }, [id]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Continue analysis polling if user navigated away and came back
+  const [continuePollingStarted, setContinuePollingStarted] = useState(false);
+  useEffect(() => {
+    console.log('[SDK] useEffect run, continuePollingStarted:', continuePollingStarted);
+    
+    if (continuePollingStarted) {
+      console.log('[SDK] Already started, returning');
+      return;
+    }
+    
+    const active = getActiveAnalysis();
+    console.log('[SDK] getActiveAnalysis result:', active, 'id:', id);
+    
+    if (!active) {
+      console.log('[SDK] No active analysis');
+      return;
+    }
+    
+    if (active.repoId !== id) {
+      console.log('[SDK] Wrong repoId, stored:', active.repoId, 'current:', id);
+      return;
+    }
+
+    setContinuePollingStarted(true);
+    console.log('[SDK] Starting continuePolling now!');
+
+    const pollForAnalysis = async () => {
+      setRefreshing(true);
+      try {
+        for (let attempt = 0; attempt < 15; attempt += 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const fresh = await fetchRepoDataCached<DashboardData>(id, { force: true });
+          console.log('[SDK] Attempt', attempt, 'latestRun:', fresh.latestRun?.id, 'previousRunId:', active.previousRunId);
+          if (fresh.latestRun?.id && fresh.latestRun.id !== active.previousRunId) {
+            setData(fresh);
+            console.log('[SDK] Analysis complete!');
+            return;
+          }
+        }
+        await load({ force: true });
+      } finally {
+        setRefreshing(false);
+      }
+    };
+
+    pollForAnalysis();
+  }, [id, load]);
 
   useEffect(() => {
     const timer = setInterval(() => { void load({ force: true }); }, 15_000);

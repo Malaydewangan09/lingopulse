@@ -8,7 +8,7 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import ScanDiffPanel from '@/components/dashboard/ScanDiffPanel';
 import Sidebar from '@/components/dashboard/Sidebar';
-import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
+import { fetchRepoDataCached, peekRepoData, setRepoDataCache, getActiveAnalysis, setActiveAnalysis } from '@/lib/repo-data-cache';
 import type { DraftFixResult, RepoInfo, ScanDiffSummary } from '@/lib/types';
 import { LOCALE_STATS, generateHeatmapData, ACTIVITY, PR_CHECKS } from '@/lib/mock-data';
 
@@ -153,6 +153,32 @@ export default function RepoDiffPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Continue analysis polling if user navigated away and came back
+  useEffect(() => {
+    const active = getActiveAnalysis();
+    if (!active || active.repoId !== id || refreshing) return;
+
+    const continuePolling = async () => {
+      setRefreshing(true);
+      try {
+        for (let attempt = 0; attempt < 15; attempt += 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const fresh = await fetchRepoDataCached<DashboardData>(id, { force: true });
+          if (fresh.latestRun?.id && fresh.latestRun.id !== active.previousRunId) {
+            setData(fresh);
+            setRepoDataCache(id, fresh);
+            return;
+          }
+        }
+        await load({ force: true });
+      } finally {
+        setRefreshing(false);
+      }
+    };
+
+    continuePolling();
+  }, [id, load]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     setRefreshError('');
@@ -170,6 +196,8 @@ export default function RepoDiffPage() {
         throw new Error(payload.error ?? `Analysis failed (${res.status})`);
       }
 
+      setActiveAnalysis(id, currentRunId);
+
       for (let attempt = 0; attempt < 15; attempt += 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         const fresh = await fetchRepoDataCached<DashboardData>(id, { force: true });
@@ -181,8 +209,8 @@ export default function RepoDiffPage() {
       }
 
       await load({ force: true });
-    } catch (nextError: unknown) {
-      setRefreshError(nextError instanceof Error ? nextError.message : 'Failed to analyze repo');
+    } catch (error: unknown) {
+      setRefreshError(error instanceof Error ? error.message : 'Failed to analyze repo');
     } finally {
       setRefreshing(false);
     }

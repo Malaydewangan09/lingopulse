@@ -12,7 +12,7 @@ import LiveIncidentsWidget from '@/components/dashboard/LiveIncidentsWidget';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import { derivePrCheckStatus } from '@/lib/pr-checks';
-import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
+import { fetchRepoDataCached, peekRepoData, setRepoDataCache, getActiveAnalysis, setActiveAnalysis } from '@/lib/repo-data-cache';
 import { LOCALE_STATS, generateHeatmapData, ACTIVITY, PR_CHECKS, QUALITY_HISTORY, COVERAGE_HISTORY } from '@/lib/mock-data';
 import type {
   ActivityEvent,
@@ -515,6 +515,33 @@ export default function RepoDashboard() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Continue analysis polling if user navigated away and came back
+  useEffect(() => {
+    const active = getActiveAnalysis();
+    if (!active || active.repoId !== id || refreshing) return;
+
+    const continuePolling = async () => {
+      setRefreshing(true);
+      try {
+        for (let attempt = 0; attempt < 15; attempt += 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const fresh = await fetchRepoDataCached<DashboardData>(id, { force: true });
+          if (fresh.latestRun?.id && fresh.latestRun.id !== active.previousRunId) {
+            setData(fresh);
+            setRepoDataCache(id, fresh);
+            // Don't clear here - let the page stay in "analyzing" state until user navigates
+            return;
+          }
+        }
+        await load({ force: true });
+      } finally {
+        setRefreshing(false);
+      }
+    };
+
+    continuePolling();
+  }, [id, load]);
+
   // Poll fast (5s) while no analysis data yet, then slow down to 30s
   const hasRuns = data?.latestRun != null;
   useEffect(() => {
@@ -546,6 +573,8 @@ export default function RepoDashboard() {
       if (!res.ok) {
         throw new Error(payload.error ?? `Analysis failed (${res.status})`);
       }
+
+      setActiveAnalysis(id, currentRunId);
 
       for (let attempt = 0; attempt < 15; attempt += 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));

@@ -137,7 +137,7 @@ export default function LiveIncidentsPanel({
                 </p>
               </div>
 
-              <div style={{ textAlign: 'right', minWidth: 36, paddingLeft: 6 }}>
+              <div style={{ textAlign: 'left', minWidth: 36, paddingLeft: 6 }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--danger)', lineHeight: 1 }}>
                   {incident.hitCount}
                 </div>

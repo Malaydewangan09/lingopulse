@@ -130,11 +130,11 @@ export default function LiveIncidentsFullView({ incidents: initialIncidents, rep
                     </div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ textAlign: 'center', flexShrink: 0, marginLeft: 12 }}>
+                  <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--warning)', fontFamily: 'var(--font-mono)' }}>
                     {incident.hitCount}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>hits</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>hits</div>
                 </div>
               </div>
 
