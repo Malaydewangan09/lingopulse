@@ -1,83 +1,49 @@
 # Lingo Pulse
 
-> Like Datadog, but for your translation coverage. Know when Spanish breaks before your users do.
+> Like Datadog, but for translation coverage. Know when Spanish breaks before your users do.
 
-Lingo Pulse is a repo-based i18n monitoring app. It connects to a GitHub repository, scans locale files, shows coverage by locale and module, and surfaces translation quality issues before release.
+Lingo Pulse is a repo-based i18n monitoring app. Connect a GitHub repository, scan locale files, track coverage by locale/module, and surface translation quality issues before release.
 
-## About Lingo.dev
-
-Lingo.dev is used here for translation quality scoring. Coverage tells you whether a key exists. Lingo.dev helps answer the next question: does the translated copy still read well enough to ship.
-
-In this project, Lingo.dev powers the quality scores shown in the dashboard and helps flag strings that need review.
-
-## About This Product
-
-Lingo Pulse adds the workflow around that scoring:
-
-- GitHub sign-in and repo connection
-- locale file discovery across common repo layouts
-- coverage tracking by locale and module
-- missing key detection
-- translation quality scoring
-- scan diff and draft fix PR generation
-- PR comments and PR risk checks
-- production incident reporting for broken translations seen by real users
-
-Each signed-in user only sees the repos connected to their own account.
-
-## Stack
-
-- Next.js 16
-- React 19
-- Supabase Auth + Postgres
-- GitHub OAuth
-- Lingo.dev SDK
-
-## Local Setup
-
-1. Install dependencies
+## Quick Start
 
 ```bash
 npm install
-```
-
-2. Copy the example environment file
-
-```bash
 cp .env.example .env.local
-```
-
-3. Fill in the required environment variables in `.env.local`
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `LINGO_DEV_API_KEY`
-- `GITHUB_WEBHOOK_SECRET`
-
-4. Run the Supabase migrations in order
-
-- `supabase/migrations/001_initial.sql`
-- `supabase/migrations/002_owner_scoping.sql`
-- `supabase/migrations/003_pr_checks_repo_pr_unique.sql`
-- `supabase/migrations/004_translation_incidents.sql`
-
-5. Configure Supabase Auth
-
-- Enable the GitHub provider in Supabase Auth
-- Add redirect URLs for:
-  - `http://localhost:3000/auth/callback`
-  - your deployed app URL with `/auth/callback`
-- In the GitHub OAuth app, use the Supabase callback URL:
-  - `https://<your-project-ref>.supabase.co/auth/v1/callback`
-
-6. Start the app
-
-```bash
+# Fill in env variables - see /docs for full setup guide
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+## Features
+
+- GitHub sign-in and repo connection
+- Locale file discovery across common repo layouts
+- Coverage tracking by locale and module
+- Missing key detection
+- Translation quality scoring via Lingo.dev
+- Scan diff with regression tracking
+- Draft fix PR generation
+- PR comments and risk checks
+- Production incident reporting (SDK for broken translations seen by real users)
+- Heatmap visualization for coverage overview
+- Locale health breakdown
+
+## Docs
+
+See **[here](https://lingopulse-lilac.vercel.app/docs)**, for full documentation.
+
+Includes:
+- Setup guide
+- How analysis works
+- Webhook configuration
+- SDK integration
+- API reference
+
+## Stack
+
+- Next.js 16 + React 19
+- Supabase Auth + Postgres
+- GitHub OAuth
+- Lingo.dev SDK
 
 ## Scripts
 
@@ -94,12 +60,6 @@ npm run lint
 - Lingo.dev scoring depends on `LINGO_API_KEY`.
 - If local and production use the same Supabase project, the same signed-in user will see the same repos in both environments.
 - Use separate Supabase projects for local, staging, and production if you want full environment isolation.
-
-## Dashboard Views
-
-- `/repo/:id` is the main operational dashboard: coverage, heatmap, locale health, live incidents, and PR checks.
-- `/repo/:id/diff` is the focused scan diff and draft-fix view.
-- `/repo/:id/sdk` is the production incident SDK setup page with ingest credentials and integration snippets.
 
 ## Production Incident Monitoring
 
@@ -168,42 +128,14 @@ Plain HTML / JS apps can use the browser build too:
 </script>
 ```
 
-If more than one app reports into the same repo, use different `appVersion` values such as:
-
-- `web@1.4.2`
-- `marketing@2026-03-13`
-- `checkout-widget@2.1.0`
-
-Lingo Pulse uses that value as the incident source label in the dashboard.
-
-The ingest endpoint is:
-
-```txt
-POST /api/incidents/report
-```
-
-This endpoint expects:
-
-- `repoId`
-- `ingestKey`
-- `issueType`
-- `locale`
-
-The route supports cross-origin browser calls so you can post incidents from an app hosted elsewhere.
-
 ## Deploy
 
-Deploy to Vercel, add the same environment variables, run the Supabase migrations on the target database, and update Supabase Auth redirect URLs for the deployed domain.
-
+Deploy to Vercel, add environment variables, run Supabase migrations, and update Auth redirect URLs.
 
 ## Screenshots
 
 ![Landing](public/screenshots/landing.png)
-
 ![Dashboard](public/screenshots/dashboard.png)
-
 ![Scan Diff](public/screenshots/scan-diff.png)
-
 ![SDK Setup](public/screenshots/sdk.png)
-
 ![Connect](public/screenshots/connect.png)
