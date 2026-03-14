@@ -372,7 +372,7 @@ export default function RepoDashboard() {
   useEffect(() => { load(); }, [load]);
 
   // Poll fast (5s) while no analysis data yet, then slow down to 30s
-  const hasRuns = (data?.runs?.length ?? 0) > 0;
+  const hasRuns = data?.latestRun != null;
   useEffect(() => {
     const interval = hasRuns ? 30_000 : 5_000;
     const timer = setInterval(load, interval);
