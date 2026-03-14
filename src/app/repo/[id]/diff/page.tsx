@@ -222,9 +222,9 @@ export default function RepoDiffPage() {
   const coverageTrend = data.previousRun ? round1(repo.overallCoverage - previousCoverage) : 0;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', alignItems: 'flex-start' }}>
+      <div style={{ paddingLeft: 52, minHeight: '100vh' }}>
       <Sidebar activeSection="overview" currentRepoId={id} variant="minimal" />
-      <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Header repo={repo} scanDiff={data.scanDiff} onRefresh={handleRefresh} refreshing={refreshing} />
 

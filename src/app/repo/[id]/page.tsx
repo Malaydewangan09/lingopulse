@@ -8,7 +8,7 @@ import QualityChart from '@/components/dashboard/QualityChart';
 import LocaleBreakdown from '@/components/dashboard/LocaleBreakdown';
 import PRChecks from '@/components/dashboard/PRChecks';
 import Sidebar from '@/components/dashboard/Sidebar';
-import LiveIncidentsPanel from '@/components/dashboard/LiveIncidentsPanel';
+import LiveIncidentsWidget from '@/components/dashboard/LiveIncidentsWidget';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import { derivePrCheckStatus } from '@/lib/pr-checks';
 import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
@@ -608,9 +608,9 @@ export default function RepoDashboard() {
   const coverageTrend = data.previousRun ? round1(repo.overallCoverage - previousCoverage) : 0;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', alignItems: 'flex-start' }}>
-      <Sidebar activeSection={activeSection} onNavigate={setActiveSection} currentRepoId={id} />
-      <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ paddingLeft: 52, minHeight: '100vh' }}>
+      <Sidebar activeSection={activeSection} onNavigate={setActiveSection} currentRepoId={id} variant="full" />
+      <div style={{ minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Header repo={repo} scanDiff={data.scanDiff} onRefresh={handleRefresh} refreshing={refreshing} />
 
@@ -730,14 +730,7 @@ export default function RepoDashboard() {
             )}
 
             {incidents.length > 0 && (
-              <div id="section-incidents" className="animate-fade-up" style={{ animationDelay: '0.16s', marginBottom: 14 }}>
-                <LiveIncidentsPanel
-                  incidents={incidents}
-                  repoId={data.repo.id}
-                  ingestKey={data.repo.public_ingest_key ?? null}
-                  compact
-                />
-              </div>
+              <LiveIncidentsWidget incidents={incidents} repoId={data.repo.id} />
             )}
 
             <div id="section-workspace" className="animate-fade-up" style={{ animationDelay: '0.1s' }}>

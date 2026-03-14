@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckCircle2, Copy, Link2, RadioTower, ShieldAlert, TerminalSquare } from 'lucide-react';
-// RadioTower still used in MetricCard, ShieldAlert/TerminalSquare in metrics
+import { CheckCircle2, Copy, Link2, RadioTower, ShieldAlert, TerminalSquare, X, BookOpen } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
 import Sidebar from '@/components/dashboard/Sidebar';
+import LiveIncidentsFullView from '@/components/dashboard/LiveIncidentsFullView';
 import { fetchRepoDataCached, peekRepoData } from '@/lib/repo-data-cache';
-import type { RepoInfo, ScanDiffSummary } from '@/lib/types';
+import type { RepoInfo, ScanDiffSummary, TranslationIncident } from '@/lib/types';
 
 type NumericValue = number | string | null | undefined;
 
@@ -227,6 +227,7 @@ export default function RepoSdkPage() {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [activeSnippet, setActiveSnippet] = useState('plain');
+  const [showDocs, setShowDocs] = useState(false);
 
   const load = useCallback(async (options: { force?: boolean } = {}) => {
     const isDemo = id === 'demo';
@@ -362,9 +363,9 @@ const label = t('checkout.pay_now');`;
   ] as const;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', alignItems: 'flex-start' }}>
+    <div style={{ paddingLeft: 52, minHeight: '100vh' }}>
       <Sidebar activeSection="overview" currentRepoId={id} variant="minimal" />
-      <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Header repo={repo} scanDiff={data.scanDiff} onRefresh={async () => { setRefreshing(true); await load({ force: true }); setRefreshing(false); }} refreshing={refreshing} />
 
@@ -376,119 +377,144 @@ const label = t('checkout.pay_now');`;
               <MetricCard label="Endpoint" value="/api" sublabel="cross-origin ingest enabled" icon={<Copy size={15} />} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)', gap: 16, alignItems: 'start' }}>
-              <div style={{ display: 'grid', gap: 14, minWidth: 0 }}>
-                <SnippetBlock
-                  tabs={[...snippetTabs]}
-                  activeTab={activeSnippet}
-                  onTabChange={setActiveSnippet}
-                />
-
-                {/* What gets reported: compact tag strip */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>reports:</span>
-                  {['raw key', 'placeholder leak', 'fallback copy', 'empty value'].map(label => (
-                    <span key={label} className="tag tag-neutral repo-chip">{label}</span>
-                  ))}
+            {/* Setup Guide - Credentials & Status side by side */}
+            <div style={{ marginBottom: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>
+                  setup guide
                 </div>
-
-                {/* Setup checklist */}
-                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 4 }}>status</span>
-                  {([
-                    { label: 'connected', done: true },
-                    { label: 'ingest key', done: !!data.repo.public_ingest_key },
-                    { label: 'first incident', done: data.incidents.length > 0 },
-                  ] as { label: string; done: boolean; localOnly?: boolean }[]).map(step => (
-                    <span key={step.label} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5,
-                      padding: '3px 8px', borderRadius: 6, fontSize: 11,
-                      fontFamily: 'var(--font-mono)',
-                      background: step.done ? 'rgba(63,200,122,0.08)' : step.localOnly ? 'rgba(230,168,23,0.06)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${step.done ? 'rgba(63,200,122,0.2)' : step.localOnly ? 'rgba(230,168,23,0.2)' : 'var(--border)'}`,
-                      color: step.done ? 'var(--success)' : step.localOnly ? 'var(--warning)' : 'var(--text-3)',
-                    }}>
-                      {step.done
-                        ? <svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5.5l2 2 4-4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        : <div style={{ width: 5, height: 5, borderRadius: '50%', background: step.localOnly ? 'var(--warning)' : 'var(--border-bright)', flexShrink: 0 }} />
-                      }
-                      {step.label}
-                    </span>
-                  ))}
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>repo id</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.id}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>ingest key</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.public_ingest_key}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>api base</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{origin}</div>
+                  </div>
                 </div>
+              </div>
 
-                {/* Env config */}
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
                 <EnvConfigBlock repoId={data.repo.id} ingestKey={data.repo.public_ingest_key ?? ''} apiBase={origin} />
               </div>
+            </div>
 
-              <div style={{ display: 'grid', gap: 14, position: 'sticky', top: 72 }}>
-                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>
-                    credentials
-                  </div>
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>repo id</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.id}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>ingest key</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{data.repo.public_ingest_key}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>api base</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-1)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{origin}</div>
-                    </div>
-                  </div>
-                </div>
+            {/* Live Incidents */}
+            {data.incidents.length > 0 && (
+              <LiveIncidentsFullView 
+                incidents={data.incidents.map(i => ({
+                  id: i.id,
+                  issueType: (i.issue_type ?? 'raw_key') as TranslationIncident['issueType'],
+                  locale: i.locale ?? 'unknown',
+                  route: i.route ?? '/',
+                  translationKey: i.translation_key || i.sample_text || 'unknown key',
+                  sampleText: i.sample_text || 'no sample',
+                  fallbackLocale: null,
+                  firstSeenAt: i.last_seen_at ?? new Date().toISOString(),
+                  lastSeenAt: i.last_seen_at ?? new Date().toISOString(),
+                  hitCount: toNumber(i.hit_count),
+                  appVersion: i.app_version ?? undefined,
+                  commitSha: null,
+                }))} 
+                repoId={data.repo.id}
+              />
+            )}
 
-                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <div>
-                      <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600 }}>Recent live reports</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-sans)', marginTop: 2 }}>
-                        compact runtime validation feed
-                      </div>
-                    </div>
-                    <Link2 size={14} color="var(--accent)" />
-                  </div>
-                  {data.incidents.length === 0 ? (
-                    <div style={{ padding: 16, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                      No incidents have been reported yet. Trigger one from the target app to validate the SDK wiring.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid' }}>
-                      {data.incidents.slice(0, 4).map((incident, index) => (
-                        <div
-                          key={incident.id}
-                          style={{
-                            padding: '12px 16px',
-                            borderTop: index === 0 ? 'none' : '1px solid var(--border)',
-                            display: 'grid',
-                            gap: 6,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', flexShrink: 0 }} />
-                            <span style={{ fontSize: 12, color: 'var(--text-1)', fontWeight: 600 }}>
-                              {incident.translation_key || incident.sample_text || labelForIncident(incident.issue_type)}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
-                            {incident.locale ?? '—'} on {incident.route ?? '/'}
-                            {incident.app_version ? ` · ${incident.app_version}` : ''}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                            <span>{labelForIncident(incident.issue_type)}</span>
-                            <span>{toNumber(incident.hit_count)} hit{toNumber(incident.hit_count) === 1 ? '' : 's'} · {formatRelativeTime(incident.last_seen_at)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            {/* Floating Docs Button */}
+            <div style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 100, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                fontSize: 11,
+                color: 'var(--text-2)',
+                fontFamily: 'var(--font-mono)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              }}>
+                Integration guide
+              </div>
+              <div
+                onClick={() => setShowDocs(true)}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  background: 'linear-gradient(135deg, var(--accent) 0%, #7C3AED 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(124, 58, 237, 0.4)',
+                  animation: 'floatPulse 2s ease-in-out infinite',
+                }}
+              >
+                <BookOpen size={20} color="white" />
               </div>
             </div>
+
+            {/* Docs Side Panel */}
+            {showDocs && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                right: 0,
+                width: '100%',
+                maxWidth: 500,
+                height: '100vh',
+                background: 'var(--card)',
+                borderLeft: '1px solid var(--border)',
+                zIndex: 200,
+                overflow: 'auto',
+                boxShadow: '-8px 0 32px rgba(0,0,0,0.3)',
+              }}>
+                <div style={{
+                  padding: '16px 20px',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  position: 'sticky',
+                  top: 0,
+                  background: 'var(--card)',
+                }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>Integration Guide</span>
+                  <div
+                    onClick={() => setShowDocs(false)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: 'var(--surface)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <X size={16} color="var(--text-3)" />
+                  </div>
+                </div>
+                <div style={{ padding: 20, display: 'grid', gap: 14 }}>
+                  <SnippetBlock
+                    tabs={[...snippetTabs]}
+                    activeTab={activeSnippet}
+                    onTabChange={setActiveSnippet}
+                  />
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>reports:</span>
+                    {['raw key', 'placeholder leak', 'fallback copy', 'empty value'].map(label => (
+                      <span key={label} className="tag tag-neutral repo-chip">{label}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </div>

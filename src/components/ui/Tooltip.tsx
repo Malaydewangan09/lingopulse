@@ -1,5 +1,6 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { HelpCircle } from 'lucide-react';
 
 interface TooltipProps {
@@ -11,20 +12,15 @@ interface TooltipProps {
 export default function Tooltip({ content, children, width = 240 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos]         = useState({ top: 0, left: 0 });
-  const ref = useRef<HTMLDivElement>(null);
 
-  const show = () => {
-    if (ref.current) {
-      const r = ref.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, left: Math.min(r.left, window.innerWidth - width - 16) });
-    }
+  const show = (e: React.MouseEvent) => {
+    setPos({ top: e.clientY + 12, left: Math.min(e.clientX, window.innerWidth - width - 16) });
     setVisible(true);
   };
 
   return (
     <>
       <div
-        ref={ref}
         onMouseEnter={show}
         onMouseLeave={() => setVisible(false)}
         style={{ display: 'inline-flex', alignItems: 'center', cursor: 'help' }}
@@ -32,9 +28,9 @@ export default function Tooltip({ content, children, width = 240 }: TooltipProps
         {children ?? <HelpCircle size={12} color="var(--text-3)" />}
       </div>
 
-      {visible && (
+      {visible && typeof document !== 'undefined' && createPortal(
         <div style={{
-          position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999,
+          position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999,
           width, background: '#0D1117',
           border: '1px solid var(--border-bright)',
           borderRadius: 8, padding: '10px 12px',
@@ -45,7 +41,8 @@ export default function Tooltip({ content, children, width = 240 }: TooltipProps
           <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.55 }}>
             {content}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

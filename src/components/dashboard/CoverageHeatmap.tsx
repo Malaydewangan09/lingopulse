@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { coverageColor, coverageLabel, coverageTextColor } from '@/lib/utils';
 import type { FileLocaleCell, LocaleStats } from '@/lib/types';
 import SectionHeader from '@/components/dashboard/SectionHeader';
@@ -62,11 +63,10 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
   const MIN_CELL_W = 72;
 
   const handleMouseEnter = (e: React.MouseEvent, cell: FileLocaleCell) => {
-    const rect = e.currentTarget.getBoundingClientRect();
     setTooltip({
       visible: true,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 8,
+      x: e.clientX,
+      y: e.clientY,
       locale: cell.locale,
       file: cell.file,
       coverage: cell.coverage,
@@ -191,7 +191,7 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
                   <span style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>
                     {locale.locale}
                   </span>
-                  {locale.isSourceLocale && <span className="tag tag-neutral">source</span>}
+                  {locale.isSourceLocale && <span className="tag tag-neutral repo-chip">source</span>}
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
@@ -245,19 +245,18 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
         )}
       </div>
 
-      {tooltip.visible && (
+      {tooltip.visible && typeof document !== 'undefined' && createPortal(
         <div
           style={{
             position: 'fixed',
             left: tooltip.x,
             top: tooltip.y,
-            transform: 'translate(-50%, -100%)',
             background: 'var(--surface)',
             border: '1px solid var(--border-bright)',
             borderRadius: 8,
             padding: '10px 10px',
             pointerEvents: 'none',
-            zIndex: 9999,
+            zIndex: 99999,
             boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
             minWidth: 160,
           }}
@@ -285,7 +284,8 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
               {coverageLabel(tooltip.coverage)}
             </span>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

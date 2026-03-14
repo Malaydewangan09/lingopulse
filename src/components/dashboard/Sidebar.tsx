@@ -122,11 +122,10 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId, vari
 
   return (
     <div style={{
-      position: 'sticky', top: 0,
-      width: 52, height: '100vh', minHeight: '100vh',
+      position: 'fixed', top: 0, left: 0, width: 52, height: '100vh',
       background: '#0D1117', borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      paddingTop: 12, paddingBottom: 16, zIndex: 100, boxSizing: 'border-box',
+      paddingTop: 12, paddingBottom: 16, zIndex: 9999, boxSizing: 'border-box',
       flexShrink: 0,
     }}>
       {/* Logo — click to go to dashboard */}
