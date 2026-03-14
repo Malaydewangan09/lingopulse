@@ -255,7 +255,7 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
             background: 'var(--surface)',
             border: '1px solid var(--border-bright)',
             borderRadius: 8,
-            padding: '10px 14px',
+            padding: '10px 20px',
             pointerEvents: 'none',
             zIndex: 9999,
             boxShadow: '0 6px 18px rgba(0,0,0,0.28)',
@@ -280,8 +280,8 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
           <div style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', marginTop: 3 }}>
             {tooltip.missing} missing · {tooltip.total} total
           </div>
-          <div style={{ marginTop: 4 }}>
-            <span className={`tag tag-${tooltip.coverage >= 88 ? 'success' : tooltip.coverage >= 60 ? 'warning' : 'danger'}`}>
+          <div style={{ marginTop: 5 }}>
+            <span className={`tag repo-chip tag-${tooltip.coverage >= 88 ? 'success' : tooltip.coverage >= 60 ? 'warning' : 'danger'}`}>
               {coverageLabel(tooltip.coverage)}
             </span>
           </div>

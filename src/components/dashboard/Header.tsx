@@ -337,11 +337,13 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
             height: 32, padding: '0 10px', borderRadius: 7,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'var(--card)', border: '1px solid var(--border)',
-            color: 'var(--text-2)', cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s',
+            color: 'var(--text-2)', cursor: 'pointer', transition: 'color 0.15s, border-color 0.15s, transform 0.1s',
             fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 500,
           }}
           onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+          onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.95)'; }}
+          onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'scale(1)'; }}
         >
           sign out
         </button>
