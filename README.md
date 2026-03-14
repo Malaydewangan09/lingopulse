@@ -4,18 +4,6 @@
 
 Lingo Pulse is a repo-based i18n monitoring app. It connects to a GitHub repository, scans locale files, shows coverage by locale and module, and surfaces translation quality issues before release.
 
-## Screenshots
-
-![Landing](public/screenshots/landing.png)
-
-![Dashboard](public/screenshots/dashboard.png)
-
-![Scan Diff](public/screenshots/scan-diff.png)
-
-![SDK Setup](public/screenshots/sdk.png)
-
-![Connect](public/screenshots/connect.png)
-
 ## About Lingo.dev
 
 Lingo.dev is used here for translation quality scoring. Coverage tells you whether a key exists. Lingo.dev helps answer the next question: does the translated copy still read well enough to ship.
@@ -206,3 +194,16 @@ The route supports cross-origin browser calls so you can post incidents from an 
 ## Deploy
 
 Deploy to Vercel, add the same environment variables, run the Supabase migrations on the target database, and update Supabase Auth redirect URLs for the deployed domain.
+
+
+## Screenshots
+
+![Landing](public/screenshots/landing.png)
+
+![Dashboard](public/screenshots/dashboard.png)
+
+![Scan Diff](public/screenshots/scan-diff.png)
+
+![SDK Setup](public/screenshots/sdk.png)
+
+![Connect](public/screenshots/connect.png)
