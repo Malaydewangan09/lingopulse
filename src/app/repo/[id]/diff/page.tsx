@@ -10,6 +10,7 @@ import ScanDiffPanel from '@/components/dashboard/ScanDiffPanel';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { fetchRepoDataCached, peekRepoData, setRepoDataCache } from '@/lib/repo-data-cache';
 import type { DraftFixResult, RepoInfo, ScanDiffSummary } from '@/lib/types';
+import { LOCALE_STATS, generateHeatmapData, ACTIVITY, PR_CHECKS } from '@/lib/mock-data';
 
 type NumericValue = number | string | null | undefined;
 
@@ -37,8 +38,24 @@ interface DashboardData {
   repo: RepoRow;
   latestRun: AnalysisRunRow | null;
   previousRun: AnalysisRunRow | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  locales?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  previousLocales?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fileMetrics?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  activity?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prChecks?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  history?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  historyLocales?: any[];
   scanDiff: ScanDiffSummary | null;
   latestDraftFix: DraftFixResult | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  incidents?: any[];
 }
 
 function toNumber(value: unknown): number {
@@ -80,6 +97,49 @@ export default function RepoDiffPage() {
   const [fixPrResult, setFixPrResult] = useState<DraftFixResult | null>(null);
 
   const load = useCallback(async (options: { force?: boolean } = {}) => {
+    const isDemo = id === 'demo';
+    if (isDemo) {
+      const localeMetrics = LOCALE_STATS.map(l => ({
+        locale: l.locale,
+        locale_name: l.name,
+        flag: l.flag,
+        coverage: Number(l.coverage),
+        quality_score: Number(l.qualityScore),
+        missing_keys: Number(l.missingKeys),
+        total_keys: Number(l.totalKeys),
+        translated_keys: Number(l.translatedKeys),
+      }));
+      const heatmapData = generateHeatmapData();
+      const demoData: DashboardData = {
+        repo: { id: 'demo', name: 'demo-app', full_name: 'demo/demo-app', owner: 'demo', default_branch: 'main', updated_at: new Date().toISOString() },
+        latestRun: { id: 'demo-run', created_at: new Date().toISOString(), overall_coverage: 78.4, quality_score: 8.2, missing_keys: 44, active_locales: 8, total_locales: 8 },
+        previousRun: { id: 'demo-prev', created_at: new Date(Date.now() - 86400000).toISOString(), overall_coverage: 77.1, quality_score: 8.0, missing_keys: 52, active_locales: 8, total_locales: 8 },
+        locales: localeMetrics,
+        previousLocales: localeMetrics.map(l => ({ ...l, coverage: Math.max(0, Number(l.coverage) - 2) })),
+        fileMetrics: heatmapData.map(h => ({ locale: h.locale, file_path: h.file, coverage: h.coverage, missing_keys: h.missingKeys, total_keys: h.totalKeys })),
+        activity: ACTIVITY.slice(0, 4).map(a => ({ id: a.id, type: a.type, branch: a.branch ?? null, author: a.author ?? null, message: a.message ?? null, created_at: new Date().toISOString(), coverage_delta: a.coverageDelta ?? 0, locales_affected: a.localesAffected ?? null })),
+        prChecks: PR_CHECKS.slice(0, 3).map(p => ({ id: p.id, pr_number: p.prNumber, pr_title: p.title, author: p.author, branch: p.branch, status: p.status, coverage_before: p.coverageBefore, coverage_after: p.coverageAfter, missing_keys: p.missingKeys, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })),
+        history: [],
+        historyLocales: [],
+        scanDiff: {
+          hasBaseline: true, status: 'watch', headline: 'auth needs attention', summary: '44 missing keys at 95.4% coverage', recommendation: 'Start with auth: 11 missing keys at 94.7% coverage.',
+          coverageDelta: 0, qualityDelta: -0.1, missingKeysDelta: 0, totalMissingKeys: 44,
+          regressedLocales: [
+            { key: 'ja', label: 'Japanese', currentCoverage: 89.0, currentMissingKeys: 15, coverageDelta: -1.2, missingDelta: 8 },
+            { key: 'ar', label: 'Arabic', currentCoverage: 82.3, currentMissingKeys: 21, coverageDelta: -0.8, missingDelta: 5 },
+          ],
+          improvedLocales: [{ key: 'es', label: 'Spanish', currentCoverage: 97.1, currentMissingKeys: 4, coverageDelta: 1.5, missingDelta: -12 }],
+          regressedModules: [{ key: 'auth', label: 'auth', currentCoverage: 94.7, currentMissingKeys: 11, coverageDelta: -5.3, missingDelta: 11 }],
+          improvedModules: [],
+        },
+        latestDraftFix: null,
+        incidents: [],
+      };
+      setData(demoData);
+      setLoading(false);
+      return;
+    }
+
     try {
       const next = await fetchRepoDataCached<DashboardData>(id, { force: options.force });
       setData(next);
@@ -162,8 +222,8 @@ export default function RepoDiffPage() {
   const coverageTrend = data.previousRun ? round1(repo.overallCoverage - previousCoverage) : 0;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar activeSection="overview" currentRepoId={id} />
+    <div style={{ display: 'flex', height: '100vh', alignItems: 'flex-start' }}>
+      <Sidebar activeSection="overview" currentRepoId={id} variant="minimal" />
       <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Header repo={repo} scanDiff={data.scanDiff} onRefresh={handleRefresh} refreshing={refreshing} />

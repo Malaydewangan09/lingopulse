@@ -229,6 +229,23 @@ export default function RepoSdkPage() {
   const [activeSnippet, setActiveSnippet] = useState('plain');
 
   const load = useCallback(async (options: { force?: boolean } = {}) => {
+    const isDemo = id === 'demo';
+    if (isDemo) {
+      const demoData: DashboardData = {
+        repo: { id: 'demo', name: 'demo-app', full_name: 'demo/demo-app', owner: 'demo', default_branch: 'main', updated_at: new Date().toISOString(), public_ingest_key: 'pk_demo_abc123' },
+        latestRun: { id: 'demo-run', created_at: new Date().toISOString(), overall_coverage: 78.4, quality_score: 8.2, missing_keys: 44, active_locales: 8, total_locales: 8 },
+        scanDiff: null,
+        incidents: [
+          { id: '1', issue_type: 'fallback', locale: 'ja', translation_key: 'common.welcome', route: '/', sample_text: 'Welcome', last_seen_at: new Date(Date.now() - 3600000).toISOString() },
+          { id: '2', issue_type: 'placeholder', locale: 'de', translation_key: 'auth.login_btn', route: '/login', sample_text: 'Login {0}', last_seen_at: new Date(Date.now() - 7200000).toISOString() },
+          { id: '3', issue_type: 'empty', locale: 'fr', translation_key: 'dashboard.title', route: '/dashboard', sample_text: '', last_seen_at: new Date(Date.now() - 86400000).toISOString() },
+        ],
+      };
+      setData(demoData);
+      setLoading(false);
+      return;
+    }
+
     try {
       const next = await fetchRepoDataCached<DashboardData>(id, { force: options.force });
       setData(next);
@@ -345,8 +362,8 @@ const label = t('checkout.pay_now');`;
   ] as const;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar activeSection="overview" currentRepoId={id} />
+    <div style={{ display: 'flex', height: '100vh', alignItems: 'flex-start' }}>
+      <Sidebar activeSection="overview" currentRepoId={id} variant="minimal" />
       <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
           <Header repo={repo} scanDiff={data.scanDiff} onRefresh={async () => { setRefreshing(true); await load({ force: true }); setRefreshing(false); }} refreshing={refreshing} />

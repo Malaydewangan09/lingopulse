@@ -135,6 +135,18 @@ export default function Header({ repo, scanDiff, onRefresh, refreshing: external
       borderBottom: '1px solid var(--border)',
       padding: '0 24px',
     }}>
+      {repo.id === 'demo' && (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(192,132,252,0.15), rgba(0,229,160,0.15))',
+          borderBottom: '1px solid rgba(192,132,252,0.3)',
+          padding: '6px 0', textAlign: 'center',
+          fontSize: 11, fontWeight: 600, color: '#C084FC',
+          fontFamily: 'DM Mono, monospace', letterSpacing: '0.5px',
+          animation: 'demo-banner 2s ease-in-out infinite',
+        }}>
+          ✦ DEMO MODE · This is sample data for demonstration ✦
+        </div>
+      )}
       <div style={{ maxWidth: 1440, margin: '0 auto', display: 'flex', alignItems: 'center', height: 56, gap: 16 }}>
 
         {/* Logo */}

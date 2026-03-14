@@ -608,7 +608,7 @@ export default function RepoDashboard() {
   const coverageTrend = data.previousRun ? round1(repo.overallCoverage - previousCoverage) : 0;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', height: '100vh', alignItems: 'flex-start' }}>
       <Sidebar activeSection={activeSection} onNavigate={setActiveSection} currentRepoId={id} />
       <div className="dashboard-content-offset" style={{ flex: 1, minWidth: 0 }}>
         <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>

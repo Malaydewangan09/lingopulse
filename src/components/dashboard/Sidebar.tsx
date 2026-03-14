@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Globe, BarChart3, GitPullRequest, Plus, Home, ChevronDown, Trash2 } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { LayoutDashboard, Globe, BarChart3, GitPullRequest, Plus, Home, ChevronDown, Trash2, ArrowLeft, LogOut } from 'lucide-react';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
 interface NavItem {
   id: string;
@@ -23,10 +24,13 @@ interface Props {
   activeSection?: string;
   onNavigate?: (id: string) => void;
   currentRepoId?: string;
+  variant?: 'full' | 'minimal';
 }
 
-export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Props) {
+export default function Sidebar({ activeSection, onNavigate, currentRepoId, variant = 'full' }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const repoIdFromUrl = pathname?.split('/')[2];
   const [hoveredId, setHoveredId]   = useState<string | null>(null);
   const [repos, setRepos]           = useState<Repo[]>([]);
   const [showRepos, setShowRepos]   = useState(false);
@@ -73,6 +77,12 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
     }
   };
 
+  const handleSignOut = async () => {
+    const supabase = createBrowserSupabaseClient();
+    await supabase.auth.signOut();
+    router.replace('/landing');
+  };
+
   const SideBtn = ({ id, icon, label, onClick, isActive = false }: {
     id: string; icon: React.ReactNode; label: string;
     onClick: () => void; isActive?: boolean;
@@ -112,15 +122,17 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
 
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, width: 52, height: '100vh',
+      position: 'sticky', top: 0,
+      width: 52, height: '100vh', minHeight: '100vh',
       background: '#0D1117', borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       paddingTop: 12, paddingBottom: 16, zIndex: 100, boxSizing: 'border-box',
+      flexShrink: 0,
     }}>
-      {/* Logo — click to go home */}
+      {/* Logo — click to go to dashboard */}
       <button
-        onClick={() => router.push('/')}
-        title="Home"
+        onClick={() => router.push(`/repo/${repoIdFromUrl || currentRepoId}`)}
+        title="Dashboard"
         style={{
           width: 28, height: 28, borderRadius: 8, border: 'none',
           background: 'var(--accent)',
@@ -139,42 +151,44 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
       </button>
 
       {/* Nav items */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, width: '100%', alignItems: 'center' }}>
-        {NAV_ITEMS.map(item => {
-          const isActive = activeSection === item.id;
-          const isHov = hoveredId === item.id;
-          return (
-            <div key={item.id} style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              <button
-                onClick={() => handleClick(item)}
-                onMouseEnter={() => setHoveredId(item.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                style={{
-                  width: 36, height: 36, borderRadius: 9, border: 'none',
-                  background: isActive ? 'var(--card-hover)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
-                  color: isActive ? 'var(--accent)' : 'var(--text-3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
-                }}
-              >
-                {item.icon}
-              </button>
-              {isHov && (
-                <div style={{
-                  position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)',
-                  background: '#0D1117', border: '1px solid var(--border-bright)', borderRadius: 6,
-                  padding: '5px 10px', whiteSpace: 'nowrap', fontSize: 11,
-                  fontFamily: 'DM Mono, monospace', color: 'var(--text-1)',
-                  pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                  animation: 'fadeIn 0.1s ease both',
-                }}>
-                  {item.label}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {variant === 'full' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, width: '100%', alignItems: 'center' }}>
+          {NAV_ITEMS.map(item => {
+            const isActive = activeSection === item.id;
+            const isHov = hoveredId === item.id;
+            return (
+              <div key={item.id} style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <button
+                  onClick={() => handleClick(item)}
+                  onMouseEnter={() => setHoveredId(item.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  style={{
+                    width: 36, height: 36, borderRadius: 9, border: 'none',
+                    background: isActive ? 'var(--card-hover)' : isHov ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    color: isActive ? 'var(--accent)' : 'var(--text-3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', transition: 'background 0.15s, color 0.15s', outline: 'none',
+                  }}
+                >
+                  {item.icon}
+                </button>
+                {isHov && (
+                  <div style={{
+                    position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)',
+                    background: '#0D1117', border: '1px solid var(--border-bright)', borderRadius: 6,
+                    padding: '5px 10px', whiteSpace: 'nowrap', fontSize: 11,
+                    fontFamily: 'DM Mono, monospace', color: 'var(--text-1)',
+                    pointerEvents: 'none', zIndex: 200, boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                    animation: 'fadeIn 0.1s ease both',
+                  }}>
+                    {item.label}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Bottom actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', alignItems: 'center' }}>
@@ -336,8 +350,9 @@ export default function Sidebar({ activeSection, onNavigate, currentRepoId }: Pr
           )}
         </div>
 
-        <SideBtn id="__home" icon={<Home size={18} />} label="Home" onClick={() => router.push('/')} />
+        <SideBtn id="__home" icon={<Home size={18} />} label="Dashboard" onClick={() => router.push(`/repo/${repoIdFromUrl || currentRepoId}`)} />
         <SideBtn id="__add" icon={<Plus size={18} />} label="Connect new repo" onClick={() => router.push('/connect')} />
+        <SideBtn id="__signout" icon={<LogOut size={18} />} label="Sign out" onClick={handleSignOut} />
       </div>
     </div>
   );

@@ -255,7 +255,7 @@ export default function CoverageHeatmap({ data, locales = [] }: Props) {
             background: 'var(--surface)',
             border: '1px solid var(--border-bright)',
             borderRadius: 8,
-            padding: '10px 20px',
+            padding: '10px 10px',
             pointerEvents: 'none',
             zIndex: 9999,
             boxShadow: '0 6px 18px rgba(0,0,0,0.28)',

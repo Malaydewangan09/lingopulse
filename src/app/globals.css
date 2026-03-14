@@ -206,7 +206,7 @@ body::after {
 }
 
 .dashboard-content-offset {
-  padding-left: 52px;
+  padding-left: 0;
 }
 
 .dashboard-main {
@@ -588,6 +588,10 @@ body::after {
 @keyframes banner-pulse {
   0%, 100% { border-color: rgba(0,229,160,0.3); }
   50% { border-color: rgba(0,229,160,0.7); }
+}
+@keyframes demo-banner {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 @keyframes sparkle {
   0%, 100% { opacity: 1; transform: scale(1); }
