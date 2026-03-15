@@ -360,19 +360,27 @@ export async function analyzeRepo(
   const locales = [...new Set(localeFiles.map(f => f.locale))];
   const targetLocales = locales.filter(l => l !== sourceLocale);
 
-  // Build per-locale results
+  // Build per-locale results (without quality scoring first)
   const localeResults: LocaleCoverageResult[] = [];
+  const localeKeysMap: Record<string, { source: Record<string, string>; target: Record<string, string> }> = {};
 
   for (const locale of [sourceLocale, ...targetLocales]) {
     const fileResults: FileCoverageResult[] = [];
     let totalKeys = 0;
     let translatedKeys = 0;
 
+    // Aggregate keys for quality scoring
+    const allSourceKeys: Record<string, string> = {};
+    const allTargetKeys: Record<string, string> = {};
+
     for (const [, group] of groups) {
       const sourceFile = group.files.get(sourceLocale);
       const targetFile = group.files.get(locale);
 
       if (!sourceFile) continue;
+      Object.assign(allSourceKeys, sourceFile.keys);
+      if (targetFile) Object.assign(allTargetKeys, targetFile.keys);
+
       const srcKeys = sourceFile.keys;
       const tgtKeys = targetFile?.keys ?? {};
       const total = Object.keys(srcKeys).length;
@@ -399,29 +407,34 @@ export async function analyzeRepo(
     }
 
     const coverage = totalKeys > 0 ? Math.round((translatedKeys / totalKeys) * 1000) / 10 : 0;
+    const qualityScore = locale === sourceLocale ? 10 : 0;
 
-    // Quality score: source locale is always 10
-    let qualityScore = locale === sourceLocale ? 10 : 0;
-    if (locale !== sourceLocale && lingoApiKey) {
-      // Aggregate source and target keys for sampling
-      const allSourceKeys: Record<string, string> = {};
-      const allTargetKeys: Record<string, string> = {};
-      for (const [, group] of groups) {
-        Object.assign(allSourceKeys, group.files.get(sourceLocale)?.keys ?? {});
-        Object.assign(allTargetKeys, group.files.get(locale)?.keys ?? {});
-      }
-      const scored = await scoreQualityWithLingo(allSourceKeys, allTargetKeys, locale, lingoApiKey);
-      qualityScore = scored ?? Math.max(5, Math.min(9.5, 5 + (coverage / 100) * 4.5));
-    } else if (locale !== sourceLocale) {
-      // Fallback: coverage-based estimate
-      qualityScore = Math.max(5, Math.min(9.5, 5 + (coverage / 100) * 4.5));
-    }
-
+    localeKeysMap[locale] = { source: allSourceKeys, target: allTargetKeys };
     localeResults.push({
       locale, totalKeys, translatedKeys,
       missingKeys: totalKeys - translatedKeys,
       coverage, qualityScore, fileResults,
     });
+  }
+
+  // Score quality in parallel for all target locales
+  if (lingoApiKey) {
+    const scoringPromises = localeResults
+      .filter(r => r.locale !== sourceLocale)
+      .map(async (result) => {
+        const keys = localeKeysMap[result.locale];
+        if (!keys) return;
+        const scored = await scoreQualityWithLingo(keys.source, keys.target, result.locale, lingoApiKey);
+        result.qualityScore = scored ?? Math.max(5, Math.min(9.5, 5 + (result.coverage / 100) * 4.5));
+      });
+    await Promise.all(scoringPromises);
+  } else {
+    // Fallback: coverage-based estimate
+    for (const result of localeResults) {
+      if (result.locale !== sourceLocale) {
+        result.qualityScore = Math.max(5, Math.min(9.5, 5 + (result.coverage / 100) * 4.5));
+      }
+    }
   }
 
   // Overall metrics (exclude source locale from averages)

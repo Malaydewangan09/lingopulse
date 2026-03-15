@@ -187,8 +187,10 @@ export default function ConnectPage() {
     for (const p of PROGRESS_STEPS) {
       setProgressLabel(p.step);
       setProgress(p.pct);
-      await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
+      await new Promise(r => setTimeout(r, 500));
     }
+    // After animation completes, immediately show done screen
+    setStep('done');
   };
 
   const handleRefreshRepos = async () => {
@@ -242,10 +244,7 @@ export default function ConnectPage() {
     }
 
     setStep('analyzing');
-    setProgress(0);
-
-    // Start animation concurrently
-    const animPromise = runProgressAnimation();
+    runProgressAnimation(); // fire and forget
 
     try {
       const res = await fetch('/api/repos', {
@@ -257,13 +256,10 @@ export default function ConnectPage() {
       const text = await res.text();
       let data: ConnectRepoResponse = {};
       try { data = JSON.parse(text); } catch {
-        await animPromise;
         setErrorMsg(`Server error (${res.status}): ${text.slice(0, 120) || 'empty response — check your Supabase env vars'}`);
         setStep('error');
         return;
       }
-
-      await animPromise;
 
       if (res.status === 409) {
         // Repo already connected — offer to go there or force-reconnect
@@ -287,10 +283,9 @@ export default function ConnectPage() {
       }
 
       setStep('done');
-
-      setTimeout(() => navigateWithTransition(router, `/repo/${repoId}`), 1200);
+      // Force immediate redirect - skip waiting for animation
+      window.location.replace(`/repo/${repoId}`);
     } catch (error: unknown) {
-      await animPromise;
       setErrorMsg(error instanceof Error ? error.message : 'Request failed');
       setStep('error');
     }
