@@ -32,10 +32,12 @@ function ThemeToggle() {
       width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)',
       background: 'transparent', color: 'var(--text-2)', cursor: 'pointer',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      transition: 'color 0.15s, border-color 0.15s',
+      transition: 'color 0.15s, border-color 0.15s, transform 0.1s',
     }}
       onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent-glow)'; }}
       onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+      onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.92)'; }}
+      onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
     >
       {dark ? <Sun size={15} /> : <Moon size={15} />}
     </button>
@@ -365,6 +367,10 @@ function ScreenshotsSection() {
                   color: active === t.id ? 'var(--accent)' : 'var(--text-2)',
                   transition: 'all 0.18s',
                 }}
+                onMouseEnter={e => { if (active !== t.id) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--text-1)'; e.currentTarget.style.transform = 'scale(1.02)'; }}}
+                onMouseLeave={e => { if (active !== t.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.transform = 'scale(1)'; }}}
+                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
               >
                 {t.label}
               </button>
@@ -488,8 +494,10 @@ export default function LandingPage() {
               transition: 'transform 0.15s, box-shadow 0.15s',
               boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
             }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+            onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
           >
             Try Demo
           </button>
@@ -579,8 +587,10 @@ export default function LandingPage() {
               opacity: ctaLoading ? 0.75 : 1,
               display: 'flex', alignItems: 'center', gap: 8,
             }}
-            onMouseEnter={e => { if (!ctaLoading) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+            onMouseEnter={e => { if (!ctaLoading) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+            onMouseDown={e => { if (!ctaLoading) { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.boxShadow = '0 0 0 rgba(0,0,0,0)'; }}}
+            onMouseUp={e => { if (!ctaLoading) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}}
           >
             {ctaLoading && (
               <svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}>
@@ -599,8 +609,10 @@ export default function LandingPage() {
               fontFamily: 'var(--font-sans)',
               transition: 'background 0.15s, border-color 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'var(--border-bright)'; e.currentTarget.style.transform = 'scale(1)'; }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+            onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
           >
             Read the docs
           </button>
@@ -1223,7 +1235,14 @@ export default function LandingPage() {
               fontSize: 14,
               textDecoration: 'none',
               boxShadow: '0 4px 15px rgba(0,229,160,0.3)',
-            }}>
+              transition: 'transform 0.15s, box-shadow 0.15s',
+              display: 'inline-block',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,229,160,0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,229,160,0.3)'; }}
+              onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+              onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+            >
               Try it now
             </a>
             <a href="https://github.com/Malaydewangan09/lingopulse" target="_blank" style={{
@@ -1235,7 +1254,14 @@ export default function LandingPage() {
               fontWeight: 500,
               fontSize: 14,
               textDecoration: 'none',
-            }}>
+              transition: 'background 0.15s, border-color 0.15s, transform 0.15s',
+              display: 'inline-block',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'scale(1)'; }}
+              onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+              onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
+            >
               GitHub
             </a>
           </div>
@@ -1400,8 +1426,10 @@ export default function LandingPage() {
                   boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
                   transition: 'transform 0.15s, box-shadow 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.boxShadow = 'none'; }}
+                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 28px rgba(0,0,0,0.2)'; }}
               >
                 Start monitoring
               </button>
@@ -1441,6 +1469,8 @@ export default function LandingPage() {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset'; }}
+                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.boxShadow = 'none'; }}
+                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 24px rgba(0,0,0,0.18)'; }}
               >
                 Connect repository
               </button>
@@ -1451,10 +1481,12 @@ export default function LandingPage() {
                   background: 'transparent', border: '1px solid var(--border-bright)',
                   color: 'var(--text-1)', fontSize: 14, cursor: 'pointer',
                   fontFamily: 'var(--font-sans)',
-                  transition: 'background 0.15s, border-color 0.15s',
+              transition: 'background 0.15s, border-color 0.15s, transform 0.15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border-bright)'; }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border-bright)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
               >
                 Read the docs
               </button>
