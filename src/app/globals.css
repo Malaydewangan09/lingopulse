@@ -556,6 +556,10 @@ body::after {
   0%, 100% { transform: translateY(0px) rotate(-2deg); }
   50%       { transform: translateY(-12px) rotate(2deg); }
 }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 @keyframes glowPulse {
   0%, 100% { box-shadow: 0 0 20px rgba(0,229,160,0.15), 0 0 40px rgba(0,229,160,0.05); }
   50%       { box-shadow: 0 0 40px rgba(0,229,160,0.3),  0 0 80px rgba(0,229,160,0.12); }
