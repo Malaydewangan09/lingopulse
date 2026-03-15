@@ -1111,7 +1111,7 @@ export default function LandingPage() {
       <section style={{ 
         padding: '80px 24px', 
         background: 'var(--surface)', 
-        borderTop: '1px solid var(--border)', 
+        borderTop: '1px solid var(--border)',
         borderBottom: '1px solid var(--border)',
         position: 'relative',
         overflow: 'hidden',
@@ -1124,7 +1124,7 @@ export default function LandingPage() {
           transform: 'translate(-50%, -50%)',
           width: 600,
           height: 400,
-          background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 60%)',
+          background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 30%)',
           animation: 'pulse 4s ease-in-out infinite',
           pointerEvents: 'none',
         }} />
@@ -1178,7 +1178,8 @@ export default function LandingPage() {
             fontSize: 15, 
             marginBottom: 32, 
             maxWidth: 480,
-            margin: '0 auto 50',
+            marginLeft: 'auto',
+            marginRight: 'auto',
             lineHeight: 1.6,
             textAlign: 'center',
           }}>
@@ -1188,12 +1189,12 @@ export default function LandingPage() {
           {/* Video container */}
           <div style={{ 
             position: 'relative',
-            maxWidth: 900,
+            maxWidth: 1100,
             margin: '0 auto',
             borderRadius: 12, 
             overflow: 'hidden',
-            border: '1px solid rgba(0,229,160,0.3)',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.4), 0 0 30px rgba(0,229,160,0.1)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
           }}>
             <video 
               autoPlay
