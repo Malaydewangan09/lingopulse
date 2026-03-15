@@ -1178,7 +1178,7 @@ export default function LandingPage() {
             fontSize: 15, 
             marginBottom: 32, 
             maxWidth: 480,
-            margin: '0 auto 32',
+            margin: '0 auto 50',
             lineHeight: 1.6,
             textAlign: 'center',
           }}>
