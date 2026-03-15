@@ -245,7 +245,7 @@ function TiltCard({ children, className = '', style = {}, strength = 7 }: {
   );
 }
 
-const LANDING_SHELL_MAX = 2000;
+const LANDING_SHELL_MAX = 1240;
 const LANDING_GUTTER = '28px';
 const LANDING_SECTION_PADDING = `88px ${LANDING_GUTTER} 72px`;
 const LANDING_BAND_PADDING = `22px ${LANDING_GUTTER}`;
@@ -504,7 +504,7 @@ export default function LandingPage() {
           heroGlowRef.current.style.transform = `translate(${e.clientX - r.left - 350}px, ${e.clientY - r.top - 350}px)`;
         }}
         style={{
-          maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING,
+          maxWidth: 2000, margin: '0 auto', padding: LANDING_SECTION_PADDING,
           display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
           position: 'relative', overflow: 'hidden',
         }}
@@ -1109,159 +1109,98 @@ export default function LandingPage() {
 
       {/* ── Demo Video ── */}
       <section style={{ 
-        padding: '100px 24px', 
+        padding: '80px 24px', 
         background: 'var(--surface)', 
         borderTop: '1px solid var(--border)', 
         borderBottom: '1px solid var(--border)',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Animated background effects */}
+        {/* Animated background glow */}
         <div style={{
           position: 'absolute',
-          top: '20%',
-          left: '10%',
-          width: 300,
-          height: 300,
-          background: 'radial-gradient(circle, rgba(0,229,160,0.12) 0%, transparent 60%)',
-          animation: 'float 6s ease-in-out infinite',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '20%',
-          right: '10%',
-          width: 250,
-          height: 250,
-          background: 'radial-gradient(circle, rgba(75,158,255,0.1) 0%, transparent 60%)',
-          animation: 'float 5s ease-in-out infinite reverse',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '50%',
+          top: '30%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           width: 600,
           height: 400,
-          background: 'radial-gradient(circle, rgba(255,107,53,0.06) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 60%)',
           animation: 'pulse 4s ease-in-out infinite',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '50%',
+          height: '100%',
+          background: 'linear-gradient(90deg, rgba(0,229,160,0.03) 0%, transparent 100%)',
           pointerEvents: 'none',
         }} />
         
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          {/* Animated badge */}
+          {/* Badge */}
           <div style={{ 
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
-            padding: '8px 16px',
-            borderRadius: 24,
-            background: 'linear-gradient(135deg, rgba(0,229,160,0.15) 0%, rgba(75,158,255,0.1) 100%)',
-            border: '1px solid rgba(0,229,160,0.3)',
-            marginBottom: 24,
-            animation: 'float 3s ease-in-out infinite',
-            boxShadow: '0 4px 20px rgba(0,229,160,0.2)',
+            padding: '6px 14px',
+            borderRadius: 20,
+            background: 'rgba(0,229,160,0.1)',
+            border: '1px solid rgba(0,229,160,0.2)',
+            marginBottom: 20,
           }}>
             <span style={{ 
-              width: 8, 
-              height: 8, 
+              width: 6, 
+              height: 6, 
               borderRadius: '50%', 
               background: 'var(--accent)',
-              boxShadow: '0 0 10px var(--accent)',
               animation: 'pulse 2s ease-in-out infinite',
             }} />
-            <span style={{ color: 'var(--accent)', fontSize: 13, fontFamily: 'DM Mono, monospace', letterSpacing: '0.05em' }}>
-              Watch the demo
+            <span style={{ color: 'var(--accent)', fontSize: 12, fontFamily: 'DM Mono, monospace' }}>
+              Demo
             </span>
           </div>
           
           <h2 style={{ 
-            fontSize: 'clamp(28px, 5vw, 48px)', 
-            fontWeight: 700, 
-            marginBottom: 16,
-            background: 'linear-gradient(135deg, #fff 0%, #a0aec0 50%, #fff 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            animation: 'shimmer 3s ease-in-out infinite',
+            fontSize: 'clamp(24px, 4vw, 36px)', 
+            fontWeight: 600, 
+            marginBottom: 12,
+            color: 'var(--text-1)',
             letterSpacing: '-0.02em',
+            textAlign: 'center',
           }}>
             From repo to production
           </h2>
-
-          <p style={{
-            color: 'var(--text-2)',
-            fontSize: 16,
-            marginBottom: 40,
-            maxWidth: 520,
-            margin: '0 auto 40',
+          
+          <p style={{ 
+            color: 'var(--text-2)', 
+            fontSize: 15, 
+            marginBottom: 32, 
+            maxWidth: 480,
+            margin: '0 auto 32',
             lineHeight: 1.6,
+            textAlign: 'center',
           }}>
-
+            Watch how Lingo Pulse catches translation bugs in production
           </p>
           
-          {/* Video container with advanced styling */}
+          {/* Video container */}
           <div style={{ 
             position: 'relative',
-            maxWidth: 780,
+            maxWidth: 900,
             margin: '0 auto',
-            borderRadius: 20, 
+            borderRadius: 12, 
             overflow: 'hidden',
             border: '1px solid rgba(0,229,160,0.3)',
-            boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 50px rgba(0,229,160,0.15), inset 0 0 0 1px rgba(255,255,255,0.05)',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            transform: 'perspective(1000px) rotateX(0deg)',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'perspective(1000px) rotateX(2deg) translateY(-8px)';
-            e.currentTarget.style.boxShadow = '0 35px 100px rgba(0,0,0,0.7), 0 0 80px rgba(0,229,160,0.25), inset 0 0 0 1px rgba(255,255,255,0.1)';
-            e.currentTarget.style.borderColor = 'rgba(0,229,160,0.5)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'perspective(1000px) rotateX(0deg) translateY(0)';
-            e.currentTarget.style.boxShadow = '0 25px 80px rgba(0,0,0,0.6), 0 0 50px rgba(0,229,160,0.15), inset 0 0 0 1px rgba(255,255,255,0.05)';
-            e.currentTarget.style.borderColor = 'rgba(0,229,160,0.3)';
-          }}
-          >
-            {/* Animated corner accents */}
-
-           
-            
-            {/* Play button overlay */}
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.6)',
-              border: '2px solid rgba(255,255,255,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 20,
-              opacity: 0,
-              transition: 'opacity 0.3s',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-            }}
-            className="play-button"
-            >
-              <div style={{
-                width: 0, 
-                height: 0, 
-                borderTop: '15px solid transparent',
-                borderBottom: '15px solid transparent',
-                borderLeft: '25px solid white',
-                marginLeft: 5,
-              }} />
-            </div>
-            
+            boxShadow: '0 20px 50px rgba(0,0,0,0.4), 0 0 30px rgba(0,229,160,0.1)',
+          }}>
             <video 
-              controls 
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
               style={{ 
                 width: '100%', 
                 display: 'block',
@@ -1272,33 +1211,31 @@ export default function LandingPage() {
             </video>
           </div>
           
-          {/* CTA below video */}
-          <div style={{ marginTop: 32, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {/* CTA buttons */}
+          <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="/auth" style={{
-              padding: '12px 28px',
-              borderRadius: 10,
+              padding: '10px 24px',
+              borderRadius: 8,
               background: 'var(--accent)',
               color: 'var(--bg)',
               fontWeight: 600,
               fontSize: 14,
               textDecoration: 'none',
-              transition: 'all 0.2s',
-              boxShadow: '0 4px 20px rgba(0,229,160,0.3)',
+              boxShadow: '0 4px 15px rgba(0,229,160,0.3)',
             }}>
               Try it now
             </a>
             <a href="https://github.com/Malaydewangan09/lingopulse" target="_blank" style={{
-              padding: '12px 28px',
-              borderRadius: 10,
+              padding: '10px 24px',
+              borderRadius: 8,
               background: 'transparent',
               border: '1px solid var(--border)',
               color: 'var(--text-1)',
               fontWeight: 500,
               fontSize: 14,
               textDecoration: 'none',
-              transition: 'all 0.2s',
             }}>
-              View on GitHub
+              GitHub
             </a>
           </div>
         </div>
