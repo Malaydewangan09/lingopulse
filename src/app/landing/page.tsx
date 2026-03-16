@@ -111,7 +111,7 @@ const STEPS = [
   {
     num: '02',
     kicker: 'Scan',
-    title: 'We map the i18n surface fast',
+    title: 'We scan your locale files automatically',
     desc: 'Locale files, module coverage, and translation quality get structured into one scan without extra setup.',
     signal: 'Coverage scan',
     tone: 'var(--blue)',
@@ -127,7 +127,7 @@ const STEPS = [
   {
     num: '03',
     kicker: 'Monitor',
-    title: 'Watch regressions before and after release',
+    title: 'Catch regressions at the PR, not in production',
     desc: 'Pushes refresh scan diff and PR checks, while the SDK reports broken translations from production traffic when real users hit them.',
     signal: 'Scan diff + SDK',
     tone: 'var(--warning)',
@@ -622,7 +622,7 @@ export default function LandingPage() {
           fontSize: 18, color: 'var(--text-2)', maxWidth: 560,
           lineHeight: 1.65, marginBottom: 44, animationDelay: '0.16s',
         }}>
-          Connect a repository to scan locale files, diff every release, open draft fix PRs, and catch broken translations in production.
+          Push code, we tell you what's broken in your translations before your users do.
         </p>
 
         {/* CTAs */}
@@ -776,7 +776,7 @@ export default function LandingPage() {
             {[
               { value: '247', label: 'missing keys caught', color: 'var(--danger)' },
               { value: '12',  label: 'locales tracked',     color: 'var(--accent)' },
-              { value: '1',   label: 'draft fix PR click',  color: 'var(--blue)'   },
+              { value: '1',   label: 'click to open fix PR',  color: 'var(--blue)'   },
               { value: 'live', label: 'production incidents', color: 'var(--warning)'},
             ].map((s, i) => (
               <div key={s.label} style={{ display: 'flex', alignItems: 'center' }}>
@@ -831,11 +831,11 @@ export default function LandingPage() {
                 Operations
               </div>
               <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, color: 'var(--text-1)', maxWidth: 580 }}>
-                Scan diffs, fix PRs,<br />production signals.
+                See what broke,<br />fix it fast.
               </h2>
             </div>
             <p style={{ color: 'var(--text-2)', fontSize: 15, maxWidth: 340, lineHeight: 1.75, paddingBottom: 6 }}>
-              Use the main dashboard for current health, then move into scan diff and the runtime SDK when you need action.
+              Every push shows you what regressed. One click opens a fix PR. The SDK catches whatever slips through to production.
             </p>
           </div>
         </RevealSection>
@@ -1433,8 +1433,8 @@ export default function LandingPage() {
               Start monitoring
             </div>
             <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 48px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, marginBottom: 18 }}>
-              Ship translations<br />
-              <span style={{ color: 'var(--accent)' }}>with confidence.</span>
+              No more broken translations<br />
+              <span style={{ color: 'var(--accent)' }}>reaching your users.</span>
             </h2>
             <p style={{ color: 'var(--text-2)', fontSize: 15, marginBottom: 36, maxWidth: 440, margin: '0 auto 36px' }}>
               Connect a repository and start scanning locale files in minutes.
