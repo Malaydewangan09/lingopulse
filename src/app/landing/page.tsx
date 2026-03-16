@@ -338,17 +338,16 @@ function ScreenshotsSection() {
       <section style={{ borderTop: '1px solid var(--border)', padding: `88px 28px 80px` }}>
         <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div className="mono-badge" style={{
-              background: 'rgba(75,158,255,0.08)', border: '1px solid rgba(75,158,255,0.18)',
-              color: 'var(--blue)', marginBottom: 20, display: 'inline-flex',
-            }}>
-              Product tour
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 40, marginBottom: 48, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--blue)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
+                Product tour
+              </div>
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, color: 'var(--text-1)' }}>
+                See it in action.
+              </h2>
             </div>
-            <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 42px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: 12 }}>
-              See it in action
-            </h2>
-            <p style={{ color: 'var(--text-2)', fontSize: 16, maxWidth: 520, margin: '0 auto' }}>
+            <p style={{ color: 'var(--text-2)', fontSize: 15, maxWidth: 340, lineHeight: 1.75, paddingBottom: 6 }}>
               Real screenshots from a live repository connected to Lingo Pulse.
             </p>
           </div>
@@ -433,6 +432,69 @@ function ScreenshotsSection() {
         </div>
       </section>
     </RevealSection>
+  );
+}
+
+// ── CascadeBadge ──────────────────────────────────────────────────────────────
+
+function CascadeBadge({ text }: { text: string }) {
+  const [visible, setVisible] = useState(0);
+  const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in');
+
+  useEffect(() => {
+    const chars = text.split('');
+    let i = 0;
+    let timer: ReturnType<typeof setTimeout>;
+
+    function runIn() {
+      setPhase('in');
+      setVisible(0);
+      i = 0;
+      const tick = () => {
+        i++;
+        setVisible(i);
+        if (i < chars.length) {
+          timer = setTimeout(tick, 38);
+        } else {
+          setPhase('hold');
+          timer = setTimeout(runOut, 3200);
+        }
+      };
+      timer = setTimeout(tick, 38);
+    }
+
+    function runOut() {
+      setPhase('out');
+      i = chars.length;
+      const tick = () => {
+        i--;
+        setVisible(i);
+        if (i > 0) {
+          timer = setTimeout(tick, 22);
+        } else {
+          timer = setTimeout(runIn, 600);
+        }
+      };
+      timer = setTimeout(tick, 22);
+    }
+
+    runIn();
+    return () => clearTimeout(timer);
+  }, [text]);
+
+  const chars = text.split('');
+  return (
+    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 500, letterSpacing: '0.04em', display: 'inline-flex' }}>
+      {chars.map((ch, i) => (
+        <span key={i} style={{
+          color: i < visible ? 'var(--accent)' : 'transparent',
+          transition: 'color 0.12s ease',
+          whiteSpace: 'pre',
+        }}>
+          {ch}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -521,18 +583,13 @@ export default function LandingPage() {
         <div ref={heroGlowRef} style={{
           position: 'absolute', top: 0, left: 0, pointerEvents: 'none', zIndex: 0,
           width: 700, height: 700, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, rgba(0,229,160,0.04) 40%, transparent 65%)',
+          background: 'radial-gradient(circle, rgba(0,229,160,0.05) 0%, transparent 60%)',
           transform: 'translate(270px, -200px)',
         }} />
 
-        {/* Pill badge */}
-        <div className="animate-fade-up mono-badge" style={{
-          background: 'var(--accent-dim)', border: '1px solid var(--accent-glow)',
-          color: 'var(--accent)',
-          marginBottom: 28, animationDelay: '0s',
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', animation: 'pulseDot 2s infinite' }} />
-          Repository-based i18n monitoring
+        {/* Hero badge — scramble */}
+        <div className="animate-fade-up" style={{ marginBottom: 28, animationDelay: '0s' }}>
+          <CascadeBadge text="know what's missing before it ships" />
         </div>
 
         {/* Headline */}
@@ -740,20 +797,25 @@ export default function LandingPage() {
 
       {/* ── Compatibility strip ── */}
       <RevealSection delay="0.06s">
-        <section style={{ padding: `18px ${LANDING_GUTTER} 0`, overflow: 'hidden' }}>
-          <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-3)', marginBottom: 14, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Scans common repository i18n layouts
-            </div>
+        <section style={{ padding: `18px 0 0`, overflow: 'hidden' }}>
+          <div style={{ textAlign: 'center', fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-3)', marginBottom: 14, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Scans common repository i18n layouts
           </div>
-
-          <div className="landing-compat-band">
-            <div className="landing-compat-track">
-              {[...REPO_PATTERNS, ...REPO_PATTERNS].map((pattern, index) => (
-                <div key={`${pattern}-${index}`} className="landing-compat-item">
-                  <span className="landing-compat-dot" />
-                  <span>{pattern}</span>
-                </div>
+          <div style={{ position: 'relative', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '10px 0', overflow: 'hidden' }}>
+            {/* fade edges */}
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(90deg, var(--bg), transparent)', zIndex: 1, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(270deg, var(--bg), transparent)', zIndex: 1, pointerEvents: 'none' }} />
+            <div style={{ display: 'inline-flex', gap: 40, animation: 'marqueeShift 18s linear infinite', whiteSpace: 'nowrap' }}>
+              {[...REPO_PATTERNS, ...REPO_PATTERNS].map((pattern, i) => (
+                <span key={i} style={{
+                  fontFamily: 'DM Mono, monospace', fontSize: 12,
+                  color: i % 3 === 0 ? 'var(--accent)' : 'var(--text-2)',
+                  fontWeight: i % 3 === 0 ? 600 : 400,
+                  letterSpacing: '0.02em',
+                }}>
+                  {i % 3 !== 0 && <span style={{ marginRight: 40, color: 'var(--border)', fontWeight: 400 }}>·</span>}
+                  {pattern}
+                </span>
               ))}
             </div>
           </div>
@@ -763,23 +825,17 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto', padding: LANDING_SECTION_PADDING }}>
         <RevealSection blur>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 28 }}>
-            <div
-              style={{
-                background: 'rgba(75,158,255,0.08)',
-                border: '1px solid rgba(75,158,255,0.18)',
-                color: 'var(--blue)',
-                marginBottom: 22,
-              }}
-              className="mono-badge "
-            >
-              Translation operations
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 40, marginBottom: 52, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--blue)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
+                Operations
+              </div>
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, color: 'var(--text-1)', maxWidth: 580 }}>
+                Scan diffs, fix PRs,<br />production signals.
+              </h2>
             </div>
-            <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 42px)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: 12, maxWidth: 760 }}>
-              Scan diffs, draft fix PRs, and production incident signals in one flow
-            </h2>
-            <p style={{ color: 'var(--text-2)', fontSize: 16, maxWidth: 620, lineHeight: 1.7 }}>
-              Use the main dashboard for current health, then move into dedicated routes for scan diff and the runtime SDK when you need action.
+            <p style={{ color: 'var(--text-2)', fontSize: 15, maxWidth: 340, lineHeight: 1.75, paddingBottom: 6 }}>
+              Use the main dashboard for current health, then move into scan diff and the runtime SDK when you need action.
             </p>
           </div>
         </RevealSection>
@@ -791,17 +847,15 @@ export default function LandingPage() {
                 position: 'relative',
                 overflow: 'hidden',
                 borderRadius: 20,
-                border: '1px solid rgba(0,229,160,0.2)',
-                background: 'linear-gradient(180deg, rgba(8,15,27,0.98) 0%, rgba(10,17,31,0.96) 100%)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                background: '#0a0e14',
                 boxShadow: '0 44px 120px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
                 padding: 30,
                 color: DARK_PANEL_TEXT,
               }}
             >
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.35 }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 18% 18%, rgba(0,229,160,0.16), transparent 34%)' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 82% 24%, rgba(75,158,255,0.14), transparent 30%)' }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)' }} />
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.3 }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)' }} />
 
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div className="landing-feature-panel-top">
@@ -997,7 +1051,7 @@ export default function LandingPage() {
                 style={{
                   borderRadius: 22,
                   border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'linear-gradient(180deg, rgba(11,18,34,0.98) 0%, rgba(9,15,27,0.96) 100%)',
+                  background: '#0a0e14',
                   boxShadow: '0 24px 70px rgba(0,0,0,0.35)',
                   padding: 24,
                   height: '100%',
@@ -1053,7 +1107,7 @@ export default function LandingPage() {
                 style={{
                   borderRadius: 22,
                   border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'linear-gradient(180deg, rgba(16,15,24,0.98) 0%, rgba(11,15,27,0.96) 100%)',
+                  background: '#0a0e14',
                   boxShadow: '0 24px 70px rgba(0,0,0,0.35)',
                   padding: 24,
                   height: '100%',
@@ -1136,7 +1190,7 @@ export default function LandingPage() {
           transform: 'translate(-50%, -50%)',
           width: 600,
           height: 400,
-          background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 30%)',
+          background: 'transparent',
           animation: 'pulse 4s ease-in-out infinite',
           pointerEvents: 'none',
         }} />
@@ -1150,53 +1204,20 @@ export default function LandingPage() {
           pointerEvents: 'none',
         }} />
         
-        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          {/* Badge */}
-          <div style={{ 
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 14px',
-            borderRadius: 20,
-            background: 'rgba(0,229,160,0.1)',
-            border: '1px solid rgba(0,229,160,0.2)',
-            marginBottom: 20,
-          }}>
-            <span style={{ 
-              width: 6, 
-              height: 6, 
-              borderRadius: '50%', 
-              background: 'var(--accent)',
-              animation: 'pulse 2s ease-in-out infinite',
-            }} />
-            <span style={{ color: 'var(--accent)', fontSize: 12, fontFamily: 'DM Mono, monospace' }}>
-              Demo
-            </span>
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 40, marginBottom: 32, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
+                Demo
+              </div>
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, color: 'var(--text-1)' }}>
+                From repo<br />to production.
+              </h2>
+            </div>
+            <p style={{ color: 'var(--text-2)', fontSize: 15, maxWidth: 340, lineHeight: 1.75, paddingBottom: 6 }}>
+              Watch how Lingo Pulse catches translation bugs in production.
+            </p>
           </div>
-          
-          <h2 style={{ 
-            fontSize: 'clamp(24px, 4vw, 36px)', 
-            fontWeight: 600, 
-            marginBottom: 12,
-            color: 'var(--text-1)',
-            letterSpacing: '-0.02em',
-            textAlign: 'center',
-          }}>
-            From repo to production
-          </h2>
-          
-          <p style={{ 
-            color: 'var(--text-2)', 
-            fontSize: 15, 
-            marginBottom: 32, 
-            maxWidth: 480,
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            lineHeight: 1.6,
-            textAlign: 'center',
-          }}>
-            Watch how Lingo Pulse catches translation bugs in production
-          </p>
           
           {/* Video container */}
           <div style={{ 
@@ -1272,25 +1293,28 @@ export default function LandingPage() {
       <section id="how-it-works" style={{ borderTop: '1px solid var(--border)', padding: LANDING_WIDE_SECTION_PADDING }}>
         <div style={{ maxWidth: LANDING_SHELL_MAX, margin: '0 auto' }}>
           <RevealSection blur>
-            <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, letterSpacing: '-0.03em', textAlign: 'center', marginBottom: 12 }}>
-              Set up in 3 steps
-            </h2>
-            <p style={{ textAlign: 'center', color: 'var(--text-2)', fontSize: 16, marginBottom: 60, maxWidth: 480, margin: '12px auto 60px' }}>
-              Sign in, select a repository, and start monitoring locale coverage in minutes.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 40, marginBottom: 52, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>
+                  Setup
+                </div>
+                <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, color: 'var(--text-1)' }}>
+                  Three steps.<br />That&apos;s it.
+                </h2>
+              </div>
+              <p style={{ color: 'var(--text-2)', fontSize: 15, maxWidth: 340, lineHeight: 1.75, paddingBottom: 6 }}>
+                Sign in, select a repository, and start monitoring locale coverage in minutes.
+              </p>
+            </div>
           </RevealSection>
 
           <div className="landing-process-shell">
             <div className="landing-process-inner">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <span className="tag tag-accent repo-chip">3 minute setup</span>
-                  <span className="tag tag-neutral repo-chip">GitHub native</span>
-                  <span className="tag tag-neutral repo-chip">No config</span>
-                </div>
-                <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_DIM }}>
-                  Single flow from repository access to release monitoring
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18, paddingBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent)' }} />
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_DIM, letterSpacing: '0.06em' }}>
+                  3 min setup · GitHub native · no config required
+                </span>
               </div>
 
               <div className="landing-process-list">
@@ -1298,113 +1322,69 @@ export default function LandingPage() {
                   <RevealSection key={num} delay={`${i * 0.12}s`}>
                     <div className="landing-process-row">
                       <div className="landing-process-index-wrap">
-                        <div
-                          className="landing-process-index"
-                          style={{
-                            color: tone,
-                            borderColor: 'rgba(255,255,255,0.08)',
-                            background: 'rgba(255,255,255,0.04)',
-                          }}
-                        >
-                          {num}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 58 }}>
+                          <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: tone, letterSpacing: '0.06em', marginBottom: 4, opacity: 0.7 }}>
+                            {kicker.toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.06em', color: tone, opacity: 0.18, fontFamily: 'DM Mono, monospace', userSelect: 'none' }}>
+                            {num}
+                          </div>
                         </div>
                         {i < STEPS.length - 1 && <div className="landing-process-segment" />}
                       </div>
 
                       <div className="landing-process-copy">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                          <div style={{ fontSize: 10, color: tone, fontFamily: 'DM Mono, monospace', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                            {kicker}
-                          </div>
-                          <span
-                            className="tag tag-neutral repo-chip"
-                            style={{
-                              background: 'rgba(255,255,255,0.04)',
-                              borderColor: 'rgba(255,255,255,0.08)',
-                              color: DARK_PANEL_DIM,
-                            }}
-                          >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                          <span style={{ width: 3, height: 16, borderRadius: 2, background: tone, display: 'inline-block' }} />
+                          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: DARK_PANEL_DIM, letterSpacing: '0.06em' }}>
                             {signal}
                           </span>
                         </div>
 
-                        <h3 style={{ fontSize: 'clamp(22px, 2.5vw, 28px)', fontWeight: 700, marginBottom: 12, letterSpacing: '-0.03em', color: DARK_PANEL_TEXT, lineHeight: 1.12 }}>
+                        <h3 style={{ fontSize: 'clamp(20px, 2.2vw, 26px)', fontWeight: 700, marginBottom: 12, letterSpacing: '-0.03em', color: DARK_PANEL_TEXT, lineHeight: 1.15 }}>
                           {title}
                         </h3>
-                        <p style={{ fontSize: 15, color: DARK_PANEL_MUTED, lineHeight: 1.75, maxWidth: 460 }}>
+                        <p style={{ fontSize: 14, color: DARK_PANEL_MUTED, lineHeight: 1.8, maxWidth: 420 }}>
                           {desc}
                         </p>
                       </div>
 
                       <div
                         className="landing-process-preview"
-                        style={{
-                          borderColor: 'rgba(255,255,255,0.07)',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 50px rgba(0,0,0,0.18)',
-                        }}
+                        style={{ borderColor: 'rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 18px 50px rgba(0,0,0,0.18)', padding: 0, overflow: 'hidden' }}
                       >
-                        <div style={{ position: 'absolute', inset: '0 0 auto 0', height: 1, background: `linear-gradient(90deg, transparent, ${tone}, transparent)`, opacity: 0.3 }} />
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
-                          <div>
-                            <div style={{ fontSize: 10, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
-                              {previewTitle}
-                            </div>
-                            <div style={{ fontSize: 12, color: DARK_PANEL_MUTED }}>
-                              {previewNote}
-                            </div>
+                        {/* Window chrome */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: tone, opacity: 0.6 }} />
                           </div>
-                          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: tone }}>
-                            {meter.value}%
-                          </span>
+                          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: DARK_PANEL_DIM }}>{previewTitle}</span>
+                          <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: tone, fontWeight: 700 }}>{meter.value}%</span>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                          {previewItems.map((item, itemIndex) => (
-                            <div
-                              key={item.label}
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                gap: 12,
-                                padding: '10px 0',
-                                borderBottom: itemIndex < previewItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.tone, flexShrink: 0 }} />
-                                <span style={{ fontSize: 12, color: DARK_PANEL_TEXT, minWidth: 0 }}>
-                                  {item.label}
-                                </span>
+                        <div style={{ padding: '14px 16px' }}>
+                          <div style={{ position: 'absolute', inset: '0 0 auto 0', height: 1, background: `linear-gradient(90deg, transparent, ${tone}, transparent)`, opacity: 0.25 }} />
+
+                          <div style={{ fontSize: 11, color: DARK_PANEL_MUTED, marginBottom: 12 }}>{previewNote}</div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                            {previewItems.map((item, itemIndex) => (
+                              <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: itemIndex < previewItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: item.tone, flexShrink: 0 }} />
+                                  <span style={{ fontSize: 11, color: DARK_PANEL_TEXT, minWidth: 0 }}>{item.label}</span>
+                                </div>
+                                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: item.tone, flexShrink: 0, letterSpacing: '0.04em' }}>{item.state}</span>
                               </div>
-                              <span
-                                className="tag tag-neutral repo-chip"
-                                style={{
-                                  background: 'rgba(255,255,255,0.04)',
-                                  borderColor: 'rgba(255,255,255,0.08)',
-                                  color: item.tone,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {item.state}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
 
-                        <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.05)', overflow: 'hidden', marginBottom: 8 }}>
-                          <div
-                            style={{
-                              width: `${meter.value}%`,
-                              height: '100%',
-                              borderRadius: 999,
-                              background: `linear-gradient(90deg, rgba(255,255,255,0.12), ${tone})`,
-                            }}
-                          />
-                        </div>
-                        <div style={{ fontSize: 10, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace' }}>
-                          {meter.label}
+                          <div style={{ height: 3, borderRadius: 999, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                            <div style={{ width: `${meter.value}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, rgba(255,255,255,0.08), ${tone})` }} />
+                          </div>
+                          <div style={{ fontSize: 10, color: DARK_PANEL_DIM, fontFamily: 'DM Mono, monospace', marginTop: 6 }}>{meter.label}</div>
                         </div>
                       </div>
                     </div>
@@ -1446,14 +1426,17 @@ export default function LandingPage() {
         <section style={{
           borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
           padding: LANDING_CTA_PADDING, position: 'relative', overflow: 'hidden',
-          background: 'radial-gradient(ellipse 80% 160% at 50% 50%, rgba(0,229,160,0.06) 0%, transparent 70%)',
+          background: 'transparent',
         }}>
           <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-            <h2 style={{ fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 14 }}>
-              Monitor translation issues before release.
-              <br /><span style={{ color: 'var(--accent)' }}>Use one dashboard for coverage, quality, and PR checks.</span>
+            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-2)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 20 }}>
+              Start monitoring
+            </div>
+            <h2 style={{ fontSize: 'clamp(26px, 3.8vw, 48px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 1.0, marginBottom: 18 }}>
+              Ship translations<br />
+              <span style={{ color: 'var(--accent)' }}>with confidence.</span>
             </h2>
-            <p style={{ color: 'var(--text-2)', fontSize: 15, marginBottom: 36 }}>
+            <p style={{ color: 'var(--text-2)', fontSize: 15, marginBottom: 36, maxWidth: 440, margin: '0 auto 36px' }}>
               Connect a repository and start scanning locale files in minutes.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>

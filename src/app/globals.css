@@ -310,8 +310,8 @@ body::after {
   position: relative;
   overflow: hidden;
   border-radius: 24px;
-  border: 1px solid rgba(0,229,160,0.14);
-  background: linear-gradient(180deg, rgba(8,15,27,0.98) 0%, rgba(10,17,31,0.96) 100%);
+  border: 1px solid rgba(255,255,255,0.07);
+  background: #0a0e14;
   box-shadow: 0 42px 120px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
@@ -329,10 +329,7 @@ body::after {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 16% 18%, rgba(0,229,160,0.14), transparent 30%),
-    radial-gradient(circle at 84% 22%, rgba(75,158,255,0.12), transparent 28%),
-    radial-gradient(circle at 66% 84%, rgba(255,107,53,0.08), transparent 32%);
+  background: linear-gradient(160deg, rgba(255,255,255,0.015) 0%, transparent 50%);
   pointer-events: none;
 }
 
