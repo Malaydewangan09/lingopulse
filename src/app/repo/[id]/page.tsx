@@ -11,6 +11,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import LiveIncidentsWidget from '@/components/dashboard/LiveIncidentsWidget';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
+import HeatmapLoader from '@/components/dashboard/HeatmapLoader';
 import { derivePrCheckStatus } from '@/lib/pr-checks';
 import { fetchRepoDataCached, peekRepoData, setRepoDataCache, getActiveAnalysis, setActiveAnalysis } from '@/lib/repo-data-cache';
 import { LOCALE_STATS, generateHeatmapData, ACTIVITY, PR_CHECKS, QUALITY_HISTORY, COVERAGE_HISTORY } from '@/lib/mock-data';

@@ -1,9 +1,10 @@
 'use client';
-import { useDeferredValue, useEffect, useState } from 'react';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Github, Key, Zap, CheckCircle2, ArrowRight, ExternalLink, Globe, Activity, Shield, LogOut, Search, RefreshCw, Lock, Sparkles, GitBranch, Eye, EyeOff } from 'lucide-react';
 import { navigateWithTransition } from '@/lib/navigation';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import HeatmapLoader from '@/components/dashboard/HeatmapLoader';
 
 type Step = 'form' | 'analyzing' | 'done' | 'error' | 'exists';
 type RepoSource = 'picker' | 'manual';
@@ -88,6 +89,7 @@ async function fetchGithubRepos(providerToken: string): Promise<GithubRepo[]> {
 export default function ConnectPage() {
   const router = useRouter();
   const [step, setStep]       = useState<Step>('form');
+  const [showCheckmark, setShowCheckmark] = useState(false);
   const [repoUrl, setRepoUrl] = useState('');
   const [ghToken, setGhToken] = useState('');
   const [lingoKey, setLingoKey] = useState('');
@@ -100,6 +102,7 @@ export default function ConnectPage() {
   const [pickerState, setPickerState] = useState<PickerState>('idle');
   const [pickerError, setPickerError] = useState('');
   const [githubProviderToken, setGithubProviderToken] = useState('');
+  const shouldRedirectRef = useRef(false);
   const [githubRepos, setGithubRepos] = useState<GithubRepo[]>([]);
   const [repoSearch, setRepoSearch] = useState('');
   const [selectedRepoId, setSelectedRepoId] = useState<number | null>(null);
@@ -183,14 +186,9 @@ export default function ConnectPage() {
     };
   }, [githubProviderToken]);
 
-  const runProgressAnimation = async () => {
-    for (const p of PROGRESS_STEPS) {
-      setProgressLabel(p.step);
-      setProgress(p.pct);
-      await new Promise(r => setTimeout(r, 500));
-    }
-    // After animation completes, immediately show done screen
-    setStep('done');
+  // Heatmap component will handle animation - just trigger it
+  const runProgressAnimation = () => {
+    // Heatmap already showing, will auto-loop until redirect
   };
 
   const handleRefreshRepos = async () => {
@@ -244,6 +242,7 @@ export default function ConnectPage() {
     }
 
     setStep('analyzing');
+    shouldRedirectRef.current = true;
     runProgressAnimation(); // fire and forget
 
     try {
@@ -256,6 +255,7 @@ export default function ConnectPage() {
       const text = await res.text();
       let data: ConnectRepoResponse = {};
       try { data = JSON.parse(text); } catch {
+        shouldRedirectRef.current = false;
         setErrorMsg(`Server error (${res.status}): ${text.slice(0, 120) || 'empty response — check your Supabase env vars'}`);
         setStep('error');
         return;
@@ -270,6 +270,7 @@ export default function ConnectPage() {
       }
 
       if (!res.ok) {
+        shouldRedirectRef.current = false;
         setErrorMsg(data.error ?? `Request failed (${res.status})`);
         setStep('error');
         return;
@@ -277,15 +278,20 @@ export default function ConnectPage() {
 
       const repoId = data.id;
       if (!repoId) {
+        shouldRedirectRef.current = false;
         setErrorMsg('Repo connected but no dashboard id was returned');
         setStep('error');
         return;
       }
 
-      setStep('done');
-      // Force immediate redirect - skip waiting for animation
-      window.location.replace(`/repo/${repoId}`);
+      // Show checkmark then jump to loaded dashboard
+      setShowCheckmark(true);
+      // Wait for green transition to complete
+      setTimeout(() => {
+        window.location.replace(`/repo/${repoId}`);
+      }, 1200);
     } catch (error: unknown) {
+      shouldRedirectRef.current = false;
       setErrorMsg(error instanceof Error ? error.message : 'Request failed');
       setStep('error');
     }
@@ -360,11 +366,12 @@ export default function ConnectPage() {
       {/* Card */}
       <div style={{
         width: '100%', maxWidth: shellMaxWidth,
-        background: 'var(--card)', border: '1px solid var(--border)',
+        background: step === 'analyzing' || step === 'done' ? 'transparent' : 'var(--card)',
+        border: step === 'analyzing' || step === 'done' ? 'none' : '1px solid var(--border)',
         borderRadius: 16, overflow: 'hidden',
-        boxShadow: '0 20px 44px rgba(0,0,0,0.24)',
+        boxShadow: step === 'analyzing' || step === 'done' ? 'none' : '0 20px 44px rgba(0,0,0,0.24)',
         animationDelay: '0.15s',
-      }} className="animate-fade-up">
+      }} className={step === 'form' ? "animate-fade-up" : ""}>
 
         {step === 'form' && (
           <form onSubmit={handleSubmit} style={{ padding: 28 }}>
@@ -787,37 +794,12 @@ export default function ConnectPage() {
           </form>
         )}
 
-        {step === 'analyzing' && (
-          <div style={{ padding: 36, textAlign: 'center' }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: 14, margin: '0 auto 20px',
-              background: 'var(--card-hover)', border: '1px solid var(--border-bright)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--accent)',
-            }}>
-              <Zap size={22} />
-            </div>
-            <h3 style={{ fontSize: 15, color: 'var(--text-1)', marginBottom: 6 }}>Analyzing your repository…</h3>
-            <p style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-sans)', marginBottom: 28, minHeight: 16 }}>
-              {progressLabel}
-            </p>
-
-            {/* Progress bar */}
-            <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{
-              height: '100%', width: `${progress}%`, borderRadius: 3,
-                background: 'var(--accent)',
-                transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
-                boxShadow: 'none',
-              }} />
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: 11,
-              color: 'var(--text-3)', marginTop: 8, textAlign: 'right',
-            }}>
-              {progress}%
-            </div>
-          </div>
+        {(step === 'analyzing' || showCheckmark) && (
+          <HeatmapLoader
+            title="Analyzing your repository"
+            subtitle="Scanning locale files and scoring translations..."
+            showCheckmark={showCheckmark}
+          />
         )}
 
         {step === 'done' && (

@@ -131,8 +131,8 @@ export async function POST(req: NextRequest) {
 
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
 
-  // Trigger initial analysis in the background
-  analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey.trim(), 'manual', db)
+  // Wait for analysis to complete before returning - so dashboard loads directly
+  await analyzeAndStore(repo.id, fullName, repo.default_branch, githubToken, lingoApiKey.trim(), 'manual', db)
     .catch(console.error);
 
   return NextResponse.json({ id: repo.id, fullName, webhookRegistered: !!webhookId }, { status: 201 });

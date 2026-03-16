@@ -6,6 +6,7 @@ import { Activity, GitCompareArrows, KeyRound, ShieldAlert } from 'lucide-react'
 import Header from '@/components/dashboard/Header';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
+import HeatmapLoader from '@/components/dashboard/HeatmapLoader';
 import ScanDiffPanel from '@/components/dashboard/ScanDiffPanel';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { fetchRepoDataCached, peekRepoData, setRepoDataCache, getActiveAnalysis, setActiveAnalysis } from '@/lib/repo-data-cache';
@@ -316,7 +317,7 @@ function ErrorState({ error }: { error: string }) {
 
 function WaitingForAnalysis() {
   return (
-    <ProductPageLoader
+    <HeatmapLoader
       title="Scan diff needs the first analysis"
       subtitle="Run the first repo analysis to unlock comparisons between scans."
     />

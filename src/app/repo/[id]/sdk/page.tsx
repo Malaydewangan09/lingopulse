@@ -6,6 +6,7 @@ import { CheckCircle2, Copy, Link2, RadioTower, ShieldAlert, TerminalSquare, X, 
 import Header from '@/components/dashboard/Header';
 import MetricCard from '@/components/dashboard/MetricCard';
 import ProductPageLoader from '@/components/dashboard/ProductPageLoader';
+import HeatmapLoader from '@/components/dashboard/HeatmapLoader';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LiveIncidentsFullView from '@/components/dashboard/LiveIncidentsFullView';
 import { fetchRepoDataCached, peekRepoData, getActiveAnalysis, setActiveAnalysis } from '@/lib/repo-data-cache';
@@ -572,7 +573,7 @@ function ErrorState({ error }: { error: string }) {
 
 function WaitingForAnalysis() {
   return (
-    <ProductPageLoader
+    <HeatmapLoader
       title="SDK setup unlocks after first scan"
       subtitle="Run the first repo analysis to scope incident reporting and verify the runtime reporter."
     />
