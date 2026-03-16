@@ -266,7 +266,7 @@ const SCREENSHOT_TABS = [
     label: 'Dashboard',
     tag: 'Coverage map',
     tagColor: 'var(--accent)',
-    description: 'Locale coverage heatmap, quality scores, and live production incidents in one view.',
+    description: 'See which locales and modules have gaps at a glance. The red cells are what your users are hitting.',
     src: '/screenshots/dashboard.png',
     alt: 'Lingo Pulse dashboard showing coverage heatmap and live incidents',
   },
@@ -275,7 +275,7 @@ const SCREENSHOT_TABS = [
     label: 'Scan Diff',
     tag: 'Release signal',
     tagColor: 'var(--blue)',
-    description: 'Every push generates a scan diff. See what regressed, what recovered, and create a draft fix PR in one click.',
+    description: 'After every push, this shows exactly what got worse and what recovered. Open a draft fix PR directly from this view.',
     src: '/screenshots/scan-diff.png',
     alt: 'Lingo Pulse scan diff view showing missing key recoveries and regressions',
   },
@@ -284,7 +284,7 @@ const SCREENSHOT_TABS = [
     label: 'SDK',
     tag: 'Production incidents',
     tagColor: 'var(--warning)',
-    description: 'Embed the lightweight SDK and catch raw keys and placeholder leaks the moment real users encounter them.',
+    description: 'Four lines of code in your frontend. Broken translations from real users show up here the moment they happen.',
     src: '/screenshots/sdk.png',
     alt: 'Lingo Pulse SDK setup page with live incident feed',
   },
@@ -293,7 +293,7 @@ const SCREENSHOT_TABS = [
     label: 'Connect',
     tag: 'Setup',
     tagColor: 'var(--text-2)',
-    description: 'Connect via GitHub OAuth to browse your repos, or paste a token directly for private access.',
+    description: 'Takes about 30 seconds. Pick your repo from the list or paste a token for private access. No config files needed.',
     src: '/screenshots/connect.png',
     alt: 'Lingo Pulse connect page with GitHub OAuth repo picker',
   },
@@ -600,7 +600,7 @@ export default function LandingPage() {
           animationDelay: '0.08s',
           color: 'var(--text-1)',
         }}>
-          Translation coverage, quality, and PR checks{' '}
+          Your translations are broken.{' '}
           <span style={{
             backgroundImage: dark
               ? 'linear-gradient(135deg, #ffffff 0%, #00E5A0 60%)'
@@ -613,7 +613,7 @@ export default function LandingPage() {
             animation: 'gradientShift 5s linear infinite',
             display: 'inline',
           }}>
-            in one dashboard.
+            You just don&apos;t know it yet.
           </span>
         </h1>
 

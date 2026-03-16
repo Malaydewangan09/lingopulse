@@ -25,7 +25,6 @@ npm install
 cp .env.example .env.local
 npm run dev
 ```
-![landing.png](../landing.png)
 
 You'll need:
 - A GitHub OAuth app (client ID + secret)
