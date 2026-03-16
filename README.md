@@ -1,42 +1,44 @@
 # Lingo Pulse
 
-> Like Datadog, but for translation coverage. Know when Spanish breaks before your users do.
+> Like Datadog, but for translation coverage.
 
-Lingo Pulse is a repo-based i18n monitoring app. Connect a GitHub repository, scan locale files, track coverage by locale/module, and surface translation quality issues before release.
+Most i18n bugs are found by users, not developers. A string goes missing, a raw key leaks, a placeholder renders as `{user_name}` — and you find out from a support ticket.
 
-## Quick Start
+Lingo Pulse connects to your GitHub repo, scans your locale files on every push, and tells you what broke before it ships.
+
+---
+
+## What it does
+
+**Scan** — connect a repo and Lingo Pulse maps your locale files automatically. No config files, no custom setup. It finds missing keys, tracks coverage per locale and module, and scores translation quality.
+
+**Diff** — every push generates a scan diff. You can see exactly what regressed, what recovered, and open a draft fix PR in one click.
+
+**Monitor** — drop the SDK in your frontend and catch broken translations from real users in production. Raw keys, empty strings, placeholder leaks — all reported back to your dashboard live.
+
+---
+
+## Quick start
 
 ```bash
 npm install
 cp .env.example .env.local
-# Fill in env variables - see /docs for full setup guide
 npm run dev
 ```
+![landing.png](../landing.png)
 
-## Features
+You'll need:
+- A GitHub OAuth app (client ID + secret)
+- A Supabase project (URL + anon key)
+- A Lingo.dev API key for quality scoring
 
-- GitHub sign-in and repo connection
-- Locale file discovery across common repo layouts
-- Coverage tracking by locale and module
-- Missing key detection
-- Translation quality scoring via Lingo.dev
-- Scan diff with regression tracking
-- Draft fix PR generation
-- PR comments and risk checks
-- Production incident monitoring (SDK for catching broken translations in production)
-- Heatmap visualization for coverage overview
-- Locale health breakdown
+Full setup guide in the [docs](https://lingopulse-lilac.vercel.app/docs).
 
-## SDK - Production Incident Monitoring
+---
 
-Lingo Pulse includes a browser SDK to catch broken translations in production:
+## SDK
 
-- Detects raw keys rendered to users
-- Catches placeholder leaks like `{user_name}`
-- Reports empty translations
-- Captures fallback-locale renders
-
-The SDK reports live incidents back to your dashboard, so you can see exactly what your users are seeing and route directly to a fix PR.
+Drop this in your frontend to catch broken translations in production:
 
 ```ts
 import { LingoPulse } from '@lingo.dev/_sdk';
@@ -48,38 +50,26 @@ const pulse = new LingoPulse({
 });
 ```
 
-Full SDK documentation [here](https://lingopulse-lilac.vercel.app/docs#incidentsdk).
+It detects raw keys (`checkout.pay_now`), placeholder leaks (`{user_name}`), empty translations, and fallback-locale renders — then sends them to your dashboard.
 
-## Docs
+Full SDK documentation in the [docs](https://lingopulse-lilac.vercel.app/docs#incidentsdk).
 
-See **[here](https://lingopulse-lilac.vercel.app/docs)**, for full documentation.
-
-Includes:
-- Setup guide
-- How analysis works
-- Webhook configuration
-- SDK integration
-- API reference
+---
 
 ## Stack
 
-- Next.js 16 + React 19
-- Supabase Auth + Postgres
+- Next.js + React
+- Supabase (auth + database)
 - GitHub OAuth
-- Lingo.dev SDK
+- Lingo.dev (quality scoring)
 
-## Scripts
-
-```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
-```
+---
 
 ## Deploy
 
-Deploy to Vercel, add environment variables, run Supabase migrations, and update Auth redirect URLs.
+Vercel works out of the box. Add your env variables, run Supabase migrations, and update the GitHub OAuth callback URL to your production domain.
+
+---
 
 ## Screenshots
 
@@ -87,5 +77,3 @@ Deploy to Vercel, add environment variables, run Supabase migrations, and update
 ![Dashboard](public/screenshots/dashboard.png)
 ![Scan Diff](public/screenshots/scan-diff.png)
 ![SDK Setup](public/screenshots/sdk.png)
-![Connect](public/screenshots/connect.png)
-![Incident SDK fix using Lingo.dev](public/screenshots/incident.png)
